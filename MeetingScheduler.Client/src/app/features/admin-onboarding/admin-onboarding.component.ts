@@ -5,6 +5,7 @@ import { StepsModule } from 'primeng/steps';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
+  standalone: true,
   selector: 'app-admin-onboarding',
   imports: [ButtonModule, CardModule, StepsModule],
   template: `

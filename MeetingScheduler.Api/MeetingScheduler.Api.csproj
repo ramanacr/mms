@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.Graph" Version="5.105.0" />
     <PackageReference Include="Microsoft.Identity.Web" Version="4.9.0" />
     <PackageReference Include="Microsoft.Identity.Web.MicrosoftGraph" Version="4.9.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

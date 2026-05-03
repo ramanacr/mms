@@ -4,6 +4,7 @@ import { CardModule } from 'primeng/card';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
+  standalone: true,
   selector: 'app-login',
   imports: [ButtonModule, CardModule],
   template: `

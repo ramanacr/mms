@@ -26,6 +26,7 @@ import { buildCreateBookingRequest } from '../../core/booking.mapper';
 import { BookingInstance, DashboardStats, Room, UpsertRoomRequest } from '../../core/models';
 
 @Component({
+  standalone: true,
   selector: 'app-scheduler-shell',
   imports: [
     CommonModule,
@@ -47,7 +48,7 @@ import { BookingInstance, DashboardStats, Room, UpsertRoomRequest } from '../../
     ToggleSwitchModule
   ],
   templateUrl: './scheduler-shell.component.html',
-  styleUrl: './scheduler-shell.component.scss'
+  styleUrls: ['./scheduler-shell.component.scss']
 })
 export class SchedulerShellComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

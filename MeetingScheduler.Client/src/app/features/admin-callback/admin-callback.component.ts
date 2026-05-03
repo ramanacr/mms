@@ -5,6 +5,7 @@ import { CardModule } from 'primeng/card';
 import { ApiService } from '../../core/api.service';
 
 @Component({
+  standalone: true,
   selector: 'app-admin-callback',
   imports: [ButtonModule, CardModule, RouterLink],
   template: `

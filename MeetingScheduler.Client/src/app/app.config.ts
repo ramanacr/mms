@@ -2,7 +2,7 @@ import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListen
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { MsalInterceptor, MsalModule, MSAL_GUARD_CONFIG, MSAL_INSTANCE, MSAL_INTERCEPTOR_CONFIG } from '@azure/msal-angular';
+import { MsalInterceptor, MsalModule, MsalGuardConfiguration, MsalInterceptorConfiguration } from '@azure/msal-angular';
 import { IPublicClientApplication, InteractionType, PublicClientApplication } from '@azure/msal-browser';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
@@ -23,7 +23,7 @@ export function msalInstanceFactory(): IPublicClientApplication {
   });
 }
 
-export function msalGuardConfigFactory() {
+export function msalGuardConfigFactory(): MsalGuardConfiguration {
   return {
     interactionType: InteractionType.Redirect,
     authRequest: {
@@ -32,7 +32,7 @@ export function msalGuardConfigFactory() {
   };
 }
 
-export function msalInterceptorConfigFactory() {
+export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
   protectedResourceMap.set(`${environment.apiBaseUrl}/*`, environment.auth.apiScopes);
   protectedResourceMap.set('https://graph.microsoft.com/v1.0/me', ['User.Read']);
@@ -57,10 +57,13 @@ export const appConfig: ApplicationConfig = {
         }
       }
     }),
-    importProvidersFrom(MsalModule),
-    { provide: MSAL_INSTANCE, useFactory: msalInstanceFactory },
-    { provide: MSAL_GUARD_CONFIG, useFactory: msalGuardConfigFactory },
-    { provide: MSAL_INTERCEPTOR_CONFIG, useFactory: msalInterceptorConfigFactory },
+    importProvidersFrom(
+      MsalModule.forRoot(
+        msalInstanceFactory(),
+        msalGuardConfigFactory(),
+        msalInterceptorConfigFactory()
+      )
+    ),
     { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true }
   ]
 };
