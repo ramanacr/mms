@@ -1,0 +1,198 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-logo">M</span>
+      <span>Room Scheduler</span>
+    </div>
+
+    <button type="button" [class.active]="activeView() === 'dashboard'" (click)="activeView.set('dashboard')">
+      <i class="pi pi-chart-line"></i>
+      Dashboard
+    </button>
+    <button type="button" [class.active]="activeView() === 'rooms'" (click)="activeView.set('rooms')">
+      <i class="pi pi-building"></i>
+      Rooms
+    </button>
+    <button type="button" [class.active]="activeView() === 'calendar'" (click)="activeView.set('calendar')">
+      <i class="pi pi-calendar"></i>
+      Calendar
+    </button>
+    <button type="button" [class.active]="activeView() === 'admin'" (click)="activeView.set('admin')">
+      <i class="pi pi-microsoft"></i>
+      Admin Consent
+    </button>
+    <button type="button" [class.active]="activeView() === 'settings'" (click)="activeView.set('settings')">
+      <i class="pi pi-cog"></i>
+      Settings
+    </button>
+  </aside>
+
+  <main class="workspace">
+    <header class="topbar">
+      <div>
+        <h1>Meeting Room Scheduler</h1>
+        <span>{{ profile().email || auth.accountName() }}</span>
+      </div>
+      <div class="topbar-actions">
+        <p-tag [value]="stats().adminConsentGranted ? 'Consent Granted' : 'Consent Pending'" [severity]="stats().adminConsentGranted ? 'success' : 'warn'" />
+        <p-tag [value]="isAdmin() ? 'OrgAdmin' : 'OrgUser'" severity="info" />
+        <p-button icon="pi pi-sign-out" [rounded]="true" [text]="true" ariaLabel="Sign out" (onClick)="auth.logout()" />
+      </div>
+    </header>
+
+    @if (savingMessage()) {
+      <div class="notice">{{ savingMessage() }}</div>
+    }
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <i class="pi pi-building"></i>
+        <span>Total Rooms</span>
+        <strong>{{ stats().totalRooms }}</strong>
+      </article>
+      <article class="stat-card amber">
+        <i class="pi pi-calendar-clock"></i>
+        <span>Bookings Today</span>
+        <strong>{{ stats().bookingsToday }}</strong>
+      </article>
+      <article class="stat-card teal">
+        <i class="pi pi-refresh"></i>
+        <span>Graph Sync</span>
+        <strong>{{ stats().graphSyncActive ? 'Active' : 'Waiting' }}</strong>
+      </article>
+      <article class="stat-card">
+        <i class="pi pi-users"></i>
+        <span>Role</span>
+        <strong>{{ isAdmin() ? 'Admin' : 'User' }}</strong>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <p-card styleClass="panel rooms-panel">
+        <ng-template pTemplate="header">
+          <div class="panel-header">
+            <div>
+              <h2>Manage Meeting Rooms</h2>
+              <span>Global room inventory for this tenant</span>
+            </div>
+            @if (isAdmin()) {
+              <p-button label="Add Room" icon="pi pi-plus" size="small" (onClick)="openNewRoom()" />
+            }
+          </div>
+        </ng-template>
+
+        <p-table [value]="rooms()" [rows]="6" [paginator]="true" responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Name</th>
+              <th>Location</th>
+              <th>Capacity</th>
+              <th>Amenities</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-room>
+            <tr>
+              <td>{{ room.name }}</td>
+              <td>{{ room.location }}</td>
+              <td>{{ room.capacity }}</td>
+              <td>{{ room.amenities || 'Standard setup' }}</td>
+              <td>
+                <p-tag [value]="room.isActive ? 'Active' : 'Inactive'" [severity]="room.isActive ? 'success' : 'danger'" />
+              </td>
+              <td>
+                <p-button icon="pi pi-pencil" [text]="true" [disabled]="!isAdmin()" ariaLabel="Edit room" (onClick)="editRoom(room)" />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+
+      <aside class="side-stack">
+        <p-card styleClass="panel integration-panel">
+          <ng-template pTemplate="header">
+            <div class="panel-header compact">
+              <h2>Microsoft Integration</h2>
+            </div>
+          </ng-template>
+          <div class="integration-row">
+            <span>Admin Consent</span>
+            <p-tag [value]="stats().adminConsentGranted ? 'Granted' : 'Pending'" [severity]="stats().adminConsentGranted ? 'success' : 'warn'" />
+          </div>
+          <div class="integration-row">
+            <span>Calendar Sync</span>
+            <p-tag [value]="stats().graphSyncActive ? 'Active' : 'Waiting'" severity="info" />
+          </div>
+          <p-divider />
+          <p-button label="Authorize Tenant" icon="pi pi-microsoft" styleClass="w-full" routerLink="/admin-onboarding" />
+        </p-card>
+
+        <p-card styleClass="panel booking-panel">
+          <ng-template pTemplate="header">
+            <div class="panel-header compact">
+              <h2>Quick Booking</h2>
+            </div>
+          </ng-template>
+          <p-button label="New Booking" icon="pi pi-calendar-plus" styleClass="w-full" (onClick)="bookingDrawerVisible.set(true)" />
+          <div class="next-slot">
+            <span>Next available</span>
+            <strong>{{ rooms()[0]?.name || 'Add a room' }}</strong>
+          </div>
+        </p-card>
+      </aside>
+    </section>
+
+    <section class="calendar-section">
+      <p-card styleClass="panel calendar-panel">
+        <ng-template pTemplate="header">
+          <div class="panel-header">
+            <div>
+              <h2>Room Availability</h2>
+              <span>Weekly schedule with recurring series highlighted</span>
+            </div>
+            <p-button label="Create Booking" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
+          </div>
+        </ng-template>
+        <full-calendar [options]="calendarOptions()" />
+      </p-card>
+    </section>
+  </main>
+</div>
+
+<p-dialog [visible]="roomDialogVisible()" (visibleChange)="roomDialogVisible.set($event)" [modal]="true" [style]="{ width: '34rem' }" [header]="editingRoom() ? 'Edit Room' : 'Add Room'">
+  <form class="dialog-form" [formGroup]="roomForm" (ngSubmit)="saveRoom()">
+    <p-fluid>
+      <label>Name<input pInputText formControlName="name" /></label>
+      <label>Floor<input pInputText formControlName="floor" /></label>
+      <label>Location<input pInputText formControlName="location" /></label>
+      <label>Capacity<p-inputnumber formControlName="capacity" [min]="1" /></label>
+      <label>Amenities<textarea pTextarea formControlName="amenities" rows="3"></textarea></label>
+      <label>Exchange Email<input pInputText formControlName="exchangeEmail" /></label>
+      <label class="switch-row">Active<p-toggleswitch formControlName="isActive" /></label>
+    </p-fluid>
+    <div class="dialog-actions">
+      <p-button label="Cancel" severity="secondary" [text]="true" type="button" (onClick)="roomDialogVisible.set(false)" />
+      <p-button label="Save Room" icon="pi pi-check" type="submit" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-drawer [visible]="bookingDrawerVisible()" (visibleChange)="bookingDrawerVisible.set($event)" position="right" [style]="{ width: '31rem' }" header="Book a Room">
+  <form class="dialog-form" [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
+    <p-fluid>
+      <label>Subject<input pInputText formControlName="subject" /></label>
+      <label>Room<p-select formControlName="roomId" [options]="roomOptions()" placeholder="Select room" /></label>
+      <label>Attendees<input pInputText formControlName="attendees" placeholder="alice@contoso.com, bob@contoso.com" /></label>
+      <label>Start<input pInputText type="datetime-local" formControlName="startAt" /></label>
+      <label>End<input pInputText type="datetime-local" formControlName="endAt" /></label>
+      <label>Recurrence<p-select formControlName="recurrenceType" [options]="recurrenceOptions" /></label>
+      <label>Interval<p-inputnumber formControlName="recurrenceInterval" [min]="1" /></label>
+      <label>Repeat Until<input pInputText type="datetime-local" formControlName="recurrenceUntil" /></label>
+    </p-fluid>
+    <div class="dialog-actions">
+      <p-button label="Cancel" severity="secondary" [text]="true" type="button" (onClick)="bookingDrawerVisible.set(false)" />
+      <p-button label="Create Booking" icon="pi pi-send" type="submit" />
+    </div>
+  </form>
+</p-drawer>

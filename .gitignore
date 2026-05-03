@@ -26,3 +26,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/.vs
+/MeetingScheduler.Api/bin/Debug/net10.0
+/MeetingScheduler.Api/obj
+/MeetingScheduler.Tests/bin/Debug/net10.0
+/MeetingScheduler.Tests/obj

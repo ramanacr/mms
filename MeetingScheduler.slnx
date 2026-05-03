@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MeetingScheduler.Api/MeetingScheduler.Api.csproj" />
+  <Project Path="MeetingScheduler.Tests/MeetingScheduler.Tests.csproj" />
+</Solution>

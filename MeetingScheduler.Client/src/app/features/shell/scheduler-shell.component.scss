@@ -1,0 +1,282 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f4f7fb;
+  color: #132238;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 16.5rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #0f1f33;
+  color: #dbeafe;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+.brand-logo {
+  width: 2rem;
+  height: 2rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 0.45rem;
+  background: #14b8a6;
+  color: white;
+}
+
+.sidebar button {
+  appearance: none;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: #b8c7dc;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar button.active,
+.sidebar button:hover {
+  background: #17304e;
+  color: white;
+}
+
+.workspace {
+  padding: 1.5rem;
+  overflow-x: hidden;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 1.55rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.topbar span,
+.panel-header span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.notice {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+  padding: 0.75rem 1rem;
+  border-radius: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(15, 31, 51, 0.05);
+}
+
+.stat-card i {
+  grid-row: span 2;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.45rem;
+  display: grid;
+  place-items: center;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.stat-card.amber i {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.stat-card.teal i {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.stat-card span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.stat-card strong {
+  font-size: 1.2rem;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: 1rem;
+  align-items: start;
+}
+
+.side-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel-header {
+  padding: 1rem 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.panel-header.compact {
+  padding-bottom: 0.25rem;
+}
+
+:host ::ng-deep .panel {
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(15, 31, 51, 0.05);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.integration-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+}
+
+.next-slot {
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.next-slot span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.calendar-section {
+  margin-top: 1rem;
+}
+
+.dialog-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.dialog-form label {
+  display: grid;
+  gap: 0.4rem;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.switch-row {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 1080px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    flex-direction: row;
+    overflow-x: auto;
+    align-items: center;
+  }
+
+  .brand {
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+
+  .sidebar button {
+    white-space: nowrap;
+  }
+
+  .stats-grid,
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace {
+    padding: 1rem;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
