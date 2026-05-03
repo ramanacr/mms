@@ -6,10 +6,10 @@ import { AdminOnboardingComponent } from './features/admin-onboarding/admin-onbo
 import { AdminCallbackComponent } from './features/admin-callback/admin-callback.component';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: 'admin-onboarding', component: AdminOnboardingComponent },
+  { path: '', component: LoginComponent },
+  { path: 'login', redirectTo: '' },
+  { path: 'dashboard', component: SchedulerShellComponent, canActivate: [MsalGuard] },
+  { path: 'admin-onboarding', component: AdminOnboardingComponent, canActivate: [MsalGuard] },
   { path: 'admin-callback', component: AdminCallbackComponent },
-  { path: '', component: SchedulerShellComponent, canActivate: [MsalGuard] },
-  { path: 'dashboard', redirectTo: '' },
   { path: '**', redirectTo: '' }
 ];

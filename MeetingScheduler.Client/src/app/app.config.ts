@@ -1,9 +1,10 @@
-import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, inject, importProvidersFrom, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { MsalInterceptor, MsalModule, MsalGuardConfiguration, MsalInterceptorConfiguration } from '@azure/msal-angular';
+import { MsalInterceptor, MsalModule, MsalGuardConfiguration, MsalInterceptorConfiguration, MsalService } from '@azure/msal-angular';
 import { IPublicClientApplication, InteractionType, PublicClientApplication } from '@azure/msal-browser';
+import { firstValueFrom } from 'rxjs';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 
@@ -43,6 +44,11 @@ export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
   };
 }
 
+function msalInitializer() {
+  const msalService = inject(MsalService);
+  return () => firstValueFrom(msalService.initialize());
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -64,6 +70,11 @@ export const appConfig: ApplicationConfig = {
         msalInterceptorConfigFactory()
       )
     ),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: msalInitializer,
+      multi: true
+    },
     { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true }
   ]
 };
