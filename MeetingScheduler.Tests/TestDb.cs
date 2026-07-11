@@ -8,21 +8,22 @@ namespace MeetingScheduler.Tests;
 
 public static class TestDb
 {
-    public static (AppDbContext Db, BookingService Service, TestTenantProvider Tenant) CreateBookingHarness()
+    public static (AppDbContext Db, BookingService Service, TestTenantProvider Tenant, FakeGraphCalendarService Graph) CreateBookingHarness()
     {
         var tenant = new TestTenantProvider();
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var db = new AppDbContext(options, tenant);
+        var graph = new FakeGraphCalendarService();
         var service = new BookingService(
             new EfRepository<Api.Models.MeetingRoom>(db),
             new EfRepository<Api.Models.BookingSeries>(db),
             new EfRepository<Api.Models.BookingInstance>(db),
             new RecurrenceService(),
-            new FakeGraphCalendarService(),
+            graph,
             tenant);
 
-        return (db, service, tenant);
+        return (db, service, tenant, graph);
     }
 }
