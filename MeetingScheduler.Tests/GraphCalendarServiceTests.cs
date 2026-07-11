@@ -15,7 +15,7 @@ public sealed class GraphCalendarServiceTests
             ExchangeEmail = "boardroom@contoso.com"
         };
 
-        var attendees = GraphCalendarService.CreateAttendees(room, [" alice@contoso.com ", "bob@contoso.com"]);
+        var attendees = GraphCalendarService.CreateAttendees(room, [" alice@contoso.com ", "bob@contoso.com"], []);
 
         Assert.Equal(3, attendees.Count);
         Assert.Contains(attendees, a => a.Type == AttendeeType.Required && a.EmailAddress?.Address == "alice@contoso.com");
@@ -31,7 +31,7 @@ public sealed class GraphCalendarServiceTests
     {
         var room = new MeetingRoom { Name = "Focus Room", ExchangeEmail = " " };
 
-        var attendees = GraphCalendarService.CreateAttendees(room, ["alice@contoso.com"]);
+        var attendees = GraphCalendarService.CreateAttendees(room, ["alice@contoso.com"], []);
 
         Assert.Single(attendees);
         Assert.Equal(AttendeeType.Required, attendees[0].Type);
@@ -47,10 +47,36 @@ public sealed class GraphCalendarServiceTests
             ExchangeEmail = "boardroom@contoso.com"
         };
 
-        var attendees = GraphCalendarService.CreateAttendees(room, ["boardroom@contoso.com", "alice@contoso.com"]);
+        var attendees = GraphCalendarService.CreateAttendees(room, ["boardroom@contoso.com", "alice@contoso.com"], []);
 
         Assert.Equal(2, attendees.Count);
         Assert.Single(attendees, a => a.EmailAddress?.Address == "boardroom@contoso.com");
         Assert.Contains(attendees, a => a.Type == AttendeeType.Resource && a.EmailAddress?.Address == "boardroom@contoso.com");
+    }
+
+    [Fact]
+    public void CreateAttendees_adds_cc_recipients_as_optional_attendees()
+    {
+        var room = new MeetingRoom
+        {
+            Name = "Board Room",
+            ExchangeEmail = "boardroom@contoso.com"
+        };
+
+        var attendees = GraphCalendarService.CreateAttendees(room, ["alice@contoso.com"], [" bob@contoso.com "]);
+
+        Assert.Contains(attendees, a => a.Type == AttendeeType.Required && a.EmailAddress?.Address == "alice@contoso.com");
+        Assert.Contains(attendees, a => a.Type == AttendeeType.Optional && a.EmailAddress?.Address == "bob@contoso.com");
+        Assert.Contains(attendees, a => a.Type == AttendeeType.Resource && a.EmailAddress?.Address == "boardroom@contoso.com");
+    }
+
+    [Fact]
+    public void CreateBody_returns_plain_text_body_when_body_is_present()
+    {
+        var body = GraphCalendarService.CreateBody(" Please review before joining. ");
+
+        Assert.NotNull(body);
+        Assert.Equal(BodyType.Text, body.ContentType);
+        Assert.Equal("Please review before joining.", body.Content);
     }
 }

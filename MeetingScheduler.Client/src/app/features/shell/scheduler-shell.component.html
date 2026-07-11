@@ -270,19 +270,45 @@
   </form>
 </p-dialog>
 
-<p-drawer [visible]="bookingDrawerVisible()" (visibleChange)="bookingDrawerVisible.set($event)" position="right" [style]="{ width: '31rem' }" header="Book a Room">
-  <form class="dialog-form" [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
-    <p-fluid>
-      <label>Subject<input pInputText formControlName="subject" /></label>
-      <label>Room<p-select formControlName="roomId" [options]="roomOptions()" placeholder="Select room" /></label>
-      <label>Attendees<input pInputText formControlName="attendees" placeholder="alice@contoso.com, bob@contoso.com" /></label>
-      <label>Start<input pInputText type="datetime-local" formControlName="startAt" /></label>
-      <label>End<input pInputText type="datetime-local" formControlName="endAt" /></label>
-      <label>Recurrence<p-select formControlName="recurrenceType" [options]="recurrenceOptions" /></label>
-      <label>Interval<p-inputnumber formControlName="recurrenceInterval" [min]="1" /></label>
-      <label>Repeat Until<input pInputText type="datetime-local" formControlName="recurrenceUntil" /></label>
-    </p-fluid>
-    <div class="dialog-actions">
+<p-drawer [visible]="bookingDrawerVisible()" (visibleChange)="bookingDrawerVisible.set($event)" position="right" styleClass="meeting-drawer" [style]="{ width: 'min(92vw, 64rem)' }" header="Schedule Meeting">
+  <form class="dialog-form meeting-form" [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
+    <section class="meeting-section">
+      <label class="full-span">Subject<input pInputText formControlName="subject" placeholder="Meeting subject" /></label>
+      <label class="full-span">Room<p-select formControlName="roomId" [options]="roomOptions()" placeholder="Select room" styleClass="w-full" /></label>
+    </section>
+
+    <section class="meeting-section recipient-section">
+      <label>
+        To
+        <p-autocomplete formControlName="to" [suggestions]="[]" [multiple]="true" [typeahead]="false" [separator]="emailSeparator" [addOnBlur]="true" [addOnTab]="true" placeholder="alice@contoso.com" styleClass="w-full recipient-input" />
+      </label>
+      <label>
+        CC
+        <p-autocomplete formControlName="cc" [suggestions]="[]" [multiple]="true" [typeahead]="false" [separator]="emailSeparator" [addOnBlur]="true" [addOnTab]="true" placeholder="optional@contoso.com" styleClass="w-full recipient-input" />
+      </label>
+      <label>
+        BCC
+        <p-autocomplete formControlName="bcc" [suggestions]="[]" [multiple]="true" [typeahead]="false" [separator]="emailSeparator" [addOnBlur]="true" [addOnTab]="true" placeholder="private@contoso.com" styleClass="w-full recipient-input" />
+      </label>
+    </section>
+
+    <section class="meeting-section time-section">
+      <label>Start<p-datepicker formControlName="startAt" [showTime]="true" hourFormat="24" [showIcon]="true" [showButtonBar]="true" [appendTo]="'body'" styleClass="w-full" /></label>
+      <label>End<p-datepicker formControlName="endAt" [showTime]="true" hourFormat="24" [showIcon]="true" [showButtonBar]="true" [appendTo]="'body'" styleClass="w-full" /></label>
+      <label class="full-span">Time Zone<p-select formControlName="timeZone" [options]="timeZoneOptions" [filter]="true" placeholder="Select time zone" styleClass="w-full" /></label>
+    </section>
+
+    <section class="meeting-section recurrence-section">
+      <label>Recurrence<p-select formControlName="recurrenceType" [options]="recurrenceOptions" styleClass="w-full" /></label>
+      <label>Interval<p-inputnumber formControlName="recurrenceInterval" [min]="1" styleClass="w-full" /></label>
+      <label>Repeat Until<p-datepicker formControlName="recurrenceUntil" [showTime]="true" hourFormat="24" [showIcon]="true" [showButtonBar]="true" [showClear]="true" [appendTo]="'body'" styleClass="w-full" /></label>
+    </section>
+
+    <section class="meeting-section">
+      <label class="full-span">Body<textarea pTextarea formControlName="body" rows="8" placeholder="Agenda, links, and notes"></textarea></label>
+    </section>
+
+    <div class="dialog-actions meeting-actions">
       <p-button label="Cancel" severity="secondary" [text]="true" type="button" (onClick)="bookingDrawerVisible.set(false)" />
       <p-button label="Send Invite & Book Room" icon="pi pi-send" type="submit" />
     </div>

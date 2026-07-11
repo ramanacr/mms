@@ -7,8 +7,10 @@ import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { DrawerModule } from 'primeng/drawer';
@@ -23,12 +25,13 @@ import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { buildCreateBookingRequest } from '../../core/booking.mapper';
+import { BookingFormValue, buildCreateBookingRequest } from '../../core/booking.mapper';
 import { BookingInstance, DashboardStats, Profile, Room, UpsertRoomRequest } from '../../core/models';
 import { environment } from '../../../environments/environment';
 
 export const DEFAULT_PROFILE: Profile = { displayName: 'Scheduler User', email: '', tenantId: '', roles: [] };
 export type DevelopmentRole = 'admin' | 'user';
+export const DEFAULT_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
 export function resolveDevelopmentRole(pathname: string, storedRole: string | null): DevelopmentRole {
   if (pathname.includes('/dev-user')) {
@@ -42,6 +45,27 @@ export function resolveDevelopmentRole(pathname: string, storedRole: string | nu
   return storedRole === 'user' ? 'user' : 'admin';
 }
 
+export function buildTimeZoneOptions(currentTimeZone = DEFAULT_TIME_ZONE): { label: string; value: string }[] {
+  const supportedValuesOf = (Intl as typeof Intl & { supportedValuesOf?: (key: 'timeZone') => string[] }).supportedValuesOf;
+  const browserZones = supportedValuesOf?.('timeZone') ?? [];
+  const preferredZones = [
+    'UTC',
+    'Asia/Calcutta',
+    'Asia/Dubai',
+    'Europe/London',
+    'Europe/Paris',
+    'America/New_York',
+    'America/Chicago',
+    'America/Los_Angeles'
+  ];
+  const zones = [currentTimeZone, ...preferredZones, ...browserZones]
+    .filter(Boolean)
+    .filter((zone, index, values) => values.indexOf(zone) === index)
+    .sort((a, b) => a.localeCompare(b));
+
+  return zones.map((zone) => ({ label: zone.replaceAll('_', ' '), value: zone }));
+}
+
 @Component({
   standalone: true,
   selector: 'app-scheduler-shell',
@@ -49,8 +73,10 @@ export function resolveDevelopmentRole(pathname: string, storedRole: string | nu
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
+    AutoCompleteModule,
     ButtonModule,
     CardModule,
+    DatePickerModule,
     DialogModule,
     DividerModule,
     DrawerModule,
@@ -89,6 +115,8 @@ export class SchedulerShellComponent implements OnInit {
   readonly devUserRoute = '/dev-user';
   readonly isDevelopment = !environment.production;
   readonly devRole = signal<DevelopmentRole>('admin');
+  readonly emailSeparator = /[,;\s]+/;
+  readonly timeZoneOptions = buildTimeZoneOptions();
 
   readonly isAdmin = computed(() => this.profile().roles.includes('OrgAdmin'));
   readonly roomOptions = computed(() => this.rooms()
@@ -125,8 +153,8 @@ export class SchedulerShellComponent implements OnInit {
     })),
     select: (selection) => {
       this.bookingForm.patchValue({
-        startAt: this.toInputValue(selection.start),
-        endAt: this.toInputValue(selection.end)
+        startAt: selection.start,
+        endAt: selection.end
       });
       this.bookingDrawerVisible.set(true);
     }
@@ -145,12 +173,16 @@ export class SchedulerShellComponent implements OnInit {
   readonly bookingForm = this.fb.nonNullable.group({
     subject: ['', Validators.required],
     roomId: ['', Validators.required],
-    attendees: [''],
-    startAt: [this.toInputValue(new Date()), Validators.required],
-    endAt: [this.toInputValue(new Date(Date.now() + 60 * 60 * 1000)), Validators.required],
+    to: [[] as string[]],
+    cc: [[] as string[]],
+    bcc: [[] as string[]],
+    body: [''],
+    startAt: [new Date(), Validators.required],
+    endAt: [new Date(Date.now() + 60 * 60 * 1000), Validators.required],
+    timeZone: [DEFAULT_TIME_ZONE, Validators.required],
     recurrenceType: ['None'],
     recurrenceInterval: [1, [Validators.required, Validators.min(1)]],
-    recurrenceUntil: ['']
+    recurrenceUntil: [null as Date | null]
   });
 
   ngOnInit(): void {
@@ -267,19 +299,13 @@ export class SchedulerShellComponent implements OnInit {
     this.api.createBooking(buildCreateBookingRequest({
       ...value,
       recurrenceType
-    }, Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')).subscribe({
+    } as BookingFormValue)).subscribe({
       next: () => {
         this.bookingDrawerVisible.set(false);
         this.loadAll();
       },
       error: () => this.savingMessage.set('Meeting invite could not be sent or the room is already reserved for that time.')
     });
-  }
-
-  private toInputValue(date: Date): string {
-    const offset = date.getTimezoneOffset();
-    const local = new Date(date.getTime() - offset * 60_000);
-    return local.toISOString().slice(0, 16);
   }
 
   private applyDevelopmentRole(): void {

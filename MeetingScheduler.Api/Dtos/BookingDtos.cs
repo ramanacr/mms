@@ -9,7 +9,9 @@ public sealed record CreateBookingRequest(
     DateTime StartAt,
     DateTime EndAt,
     string TimeZone,
-    RecurrenceRequest? Recurrence);
+    RecurrenceRequest? Recurrence,
+    string[]? OptionalAttendees = null,
+    string? Body = null);
 
 public sealed record BookingInstanceDto(
     Guid Id,

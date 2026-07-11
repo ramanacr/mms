@@ -35,7 +35,8 @@ public sealed class GraphCalendarService : IGraphCalendarService
             Start = new DateTimeTimeZone { DateTime = first.StartAt.ToString("yyyy-MM-ddTHH:mm:ss"), TimeZone = request.TimeZone },
             End = new DateTimeTimeZone { DateTime = first.EndAt.ToString("yyyy-MM-ddTHH:mm:ss"), TimeZone = request.TimeZone },
             Location = new Location { DisplayName = room.Name, LocationEmailAddress = room.ExchangeEmail },
-            Attendees = CreateAttendees(room, request.Attendees)
+            Attendees = CreateAttendees(room, request.Attendees, request.OptionalAttendees ?? []),
+            Body = CreateBody(request.Body)
         };
 
         if (request.Recurrence is { Type: not null } recurrence
@@ -66,35 +67,56 @@ public sealed class GraphCalendarService : IGraphCalendarService
         await _graphClient.Me.Events[graphEventId].DeleteAsync(cancellationToken: cancellationToken);
     }
 
-    public static List<Attendee> CreateAttendees(MeetingRoom room, IEnumerable<string> attendeeEmails)
+    public static List<Attendee> CreateAttendees(MeetingRoom room, IEnumerable<string> requiredEmails, IEnumerable<string> optionalEmails)
     {
         var roomEmail = string.IsNullOrWhiteSpace(room.ExchangeEmail)
             ? null
             : room.ExchangeEmail.Trim();
 
-        var attendees = attendeeEmails
-            .Where(a => !string.IsNullOrWhiteSpace(a))
-            .Select(a => a.Trim())
-            .Where(a => roomEmail is null || !string.Equals(a, roomEmail, StringComparison.OrdinalIgnoreCase))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(a => new Attendee
-            {
-                Type = AttendeeType.Required,
-                EmailAddress = new EmailAddress { Address = a, Name = a }
-            })
+        var required = NormalizeEmails(requiredEmails, roomEmail).ToList();
+        var optional = NormalizeEmails(optionalEmails, roomEmail)
+            .Where(a => !required.Contains(a, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        var attendees = required
+            .Select(a => CreateAttendee(a, AttendeeType.Required))
+            .Concat(optional.Select(a => CreateAttendee(a, AttendeeType.Optional)))
             .ToList();
 
         if (roomEmail is not null)
         {
-            attendees.Add(new Attendee
-            {
-                Type = AttendeeType.Resource,
-                EmailAddress = new EmailAddress { Address = roomEmail, Name = room.Name }
-            });
+            attendees.Add(CreateAttendee(roomEmail, AttendeeType.Resource, room.Name));
         }
 
         return attendees;
     }
+
+    public static ItemBody? CreateBody(string? body)
+    {
+        return string.IsNullOrWhiteSpace(body)
+            ? null
+            : new ItemBody
+            {
+                ContentType = BodyType.Text,
+                Content = body.Trim()
+            };
+    }
+
+    private static IEnumerable<string> NormalizeEmails(IEnumerable<string> emails, string? roomEmail)
+    {
+        return emails
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Select(a => a.Trim())
+            .Where(a => roomEmail is null || !string.Equals(a, roomEmail, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static Attendee CreateAttendee(string address, AttendeeType type, string? name = null) =>
+        new()
+        {
+            Type = type,
+            EmailAddress = new EmailAddress { Address = address, Name = name ?? address }
+        };
 
     private static PatternedRecurrence CreatePatternedRecurrence(CreateBookingRequest request, RecurrenceRequest recurrence)
     {

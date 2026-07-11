@@ -61,7 +61,11 @@ public sealed class BookingService : IBookingService
         var recurrenceType = request.Recurrence?.Type ?? "None";
         var interval = Math.Max(1, request.Recurrence?.Interval ?? 1);
         var organizer = string.IsNullOrWhiteSpace(_tenantProvider.UserEmail) ? "unknown@local" : _tenantProvider.UserEmail;
-        var attendeeCsv = string.Join(';', request.Attendees.Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()));
+        var attendeeCsv = string.Join(';', request.Attendees
+            .Concat(request.OptionalAttendees ?? [])
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Select(a => a.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase));
 
         var series = new BookingSeries
         {

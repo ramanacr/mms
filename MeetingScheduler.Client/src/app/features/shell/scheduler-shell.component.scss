@@ -269,6 +269,34 @@ h2 {
   margin-top: 1rem;
 }
 
+.meeting-form,
+.meeting-section {
+  display: grid;
+}
+
+.meeting-form,
+.meeting-section {
+  gap: 1rem;
+}
+
+.meeting-section {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.full-span,
+.recipient-section label,
+.recurrence-section label:last-child {
+  grid-column: 1 / -1;
+}
+
+.recipient-section {
+  grid-template-columns: 1fr;
+}
+
+.recurrence-section {
+  grid-template-columns: minmax(10rem, 1fr) minmax(8rem, 0.65fr) minmax(14rem, 1fr);
+}
+
 @media (max-width: 1080px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -306,5 +334,10 @@ h2 {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .meeting-section,
+  .recurrence-section {
+    grid-template-columns: 1fr;
   }
 }

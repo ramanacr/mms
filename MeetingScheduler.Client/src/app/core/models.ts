@@ -36,6 +36,8 @@ export interface CreateBookingRequest {
   roomId: string;
   subject: string;
   attendees: string[];
+  optionalAttendees?: string[] | null;
+  body?: string | null;
   startAt: string;
   endAt: string;
   timeZone: string;
