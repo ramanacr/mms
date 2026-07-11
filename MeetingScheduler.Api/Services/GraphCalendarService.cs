@@ -73,6 +73,36 @@ public sealed class GraphCalendarService : IGraphCalendarService
         await _graphClient.Me.Events[graphEventId].DeleteAsync(cancellationToken: cancellationToken);
     }
 
+    public static List<Attendee> CreateAttendees(MeetingRoom room, IEnumerable<string> attendeeEmails)
+    {
+        var roomEmail = string.IsNullOrWhiteSpace(room.ExchangeEmail)
+            ? null
+            : room.ExchangeEmail.Trim();
+
+        var attendees = attendeeEmails
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Select(a => a.Trim())
+            .Where(a => roomEmail is null || !string.Equals(a, roomEmail, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(a => new Attendee
+            {
+                Type = AttendeeType.Required,
+                EmailAddress = new EmailAddress { Address = a, Name = a }
+            })
+            .ToList();
+
+        if (roomEmail is not null)
+        {
+            attendees.Add(new Attendee
+            {
+                Type = AttendeeType.Resource,
+                EmailAddress = new EmailAddress { Address = roomEmail, Name = room.Name }
+            });
+        }
+
+        return attendees;
+    }
+
     private static PatternedRecurrence CreatePatternedRecurrence(CreateBookingRequest request, RecurrenceRequest recurrence)
     {
         var type = recurrence.Type.ToLowerInvariant() switch
