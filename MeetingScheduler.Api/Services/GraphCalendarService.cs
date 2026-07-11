@@ -35,14 +35,7 @@ public sealed class GraphCalendarService : IGraphCalendarService
             Start = new DateTimeTimeZone { DateTime = first.StartAt.ToString("yyyy-MM-ddTHH:mm:ss"), TimeZone = request.TimeZone },
             End = new DateTimeTimeZone { DateTime = first.EndAt.ToString("yyyy-MM-ddTHH:mm:ss"), TimeZone = request.TimeZone },
             Location = new Location { DisplayName = room.Name, LocationEmailAddress = room.ExchangeEmail },
-            Attendees = request.Attendees
-                .Where(a => !string.IsNullOrWhiteSpace(a))
-                .Select(a => new Attendee
-                {
-                    Type = AttendeeType.Required,
-                    EmailAddress = new EmailAddress { Address = a.Trim(), Name = a.Trim() }
-                })
-                .ToList()
+            Attendees = CreateAttendees(room, request.Attendees)
         };
 
         if (request.Recurrence is { Type: not null } recurrence
