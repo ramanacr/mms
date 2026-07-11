@@ -33,3 +33,4 @@ yarn-error.log*
 /MeetingScheduler.Tests/obj
 /.codex/run-logs
 /.logs
+MeetingScheduler.Client/package-lock.json
