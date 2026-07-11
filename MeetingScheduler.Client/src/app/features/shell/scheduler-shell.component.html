@@ -2,7 +2,7 @@
   <aside class="sidebar">
     <div class="brand">
       <span class="brand-logo">M</span>
-      <span>Room Scheduler</span>
+      <span>MMS</span>
     </div>
 
     <button type="button" [class.active]="activeView() === 'dashboard'" (click)="switchView('dashboard')">
@@ -32,7 +32,7 @@
   <main class="workspace">
     <header class="topbar">
       <div>
-        <h1>Meeting Room Scheduler</h1>
+        <h1>Microsoft Meeting Scheduler</h1>
         <span>{{ profile().email || auth.accountName() }}</span>
       </div>
       <div class="topbar-actions">
@@ -78,7 +78,7 @@
                 <h2>Upcoming Availability</h2>
                 <span>Book a room or switch to Calendar for the full schedule</span>
               </div>
-              <p-button label="Create Booking" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
+              <p-button label="Schedule Meeting" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
             </div>
           </ng-template>
           <full-calendar [options]="calendarOptions()" />
@@ -88,10 +88,10 @@
           <p-card styleClass="panel booking-panel">
             <ng-template pTemplate="header">
               <div class="panel-header compact">
-                <h2>Quick Booking</h2>
+                <h2>Quick Meeting</h2>
               </div>
             </ng-template>
-            <p-button label="New Booking" icon="pi pi-calendar-plus" styleClass="w-full" (onClick)="bookingDrawerVisible.set(true)" />
+            <p-button label="Schedule Meeting" icon="pi pi-calendar-plus" styleClass="w-full" (onClick)="bookingDrawerVisible.set(true)" />
             <div class="next-slot">
               <span>First available room</span>
               <strong>{{ rooms()[0]?.name || 'No rooms available' }}</strong>
@@ -179,7 +179,7 @@
                 <h2>Room Availability</h2>
                 <span>Weekly schedule with recurring series highlighted</span>
               </div>
-              <p-button label="Create Booking" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
+              <p-button label="Schedule Meeting" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
             </div>
           </ng-template>
           <full-calendar [options]="calendarOptions()" />
@@ -284,7 +284,7 @@
     </p-fluid>
     <div class="dialog-actions">
       <p-button label="Cancel" severity="secondary" [text]="true" type="button" (onClick)="bookingDrawerVisible.set(false)" />
-      <p-button label="Create Booking" icon="pi pi-send" type="submit" />
+      <p-button label="Send Invite & Book Room" icon="pi pi-send" type="submit" />
     </div>
   </form>
 </p-drawer>

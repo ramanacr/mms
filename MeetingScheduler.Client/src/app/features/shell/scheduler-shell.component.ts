@@ -91,7 +91,12 @@ export class SchedulerShellComponent implements OnInit {
   readonly devRole = signal<DevelopmentRole>('admin');
 
   readonly isAdmin = computed(() => this.profile().roles.includes('OrgAdmin'));
-  readonly roomOptions = computed(() => this.rooms().filter((room) => room.isActive).map((room) => ({ label: room.name, value: room.id })));
+  readonly roomOptions = computed(() => this.rooms()
+    .filter((room) => room.isActive)
+    .map((room) => ({
+      label: `${room.name} - ${room.capacity} seats`,
+      value: room.id
+    })));
   readonly recurrenceOptions = [
     { label: 'Does not repeat', value: 'None' },
     { label: 'Daily', value: 'Daily' },
@@ -267,7 +272,7 @@ export class SchedulerShellComponent implements OnInit {
         this.bookingDrawerVisible.set(false);
         this.loadAll();
       },
-      error: () => this.savingMessage.set('Booking failed. The room may already be reserved for that time.')
+      error: () => this.savingMessage.set('Meeting invite could not be sent or the room is already reserved for that time.')
     });
   }
 
