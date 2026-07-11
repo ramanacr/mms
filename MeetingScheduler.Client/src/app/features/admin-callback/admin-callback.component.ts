@@ -26,16 +26,18 @@ export class AdminCallbackComponent implements OnInit {
   ngOnInit(): void {
     const tenant = this.route.snapshot.queryParamMap.get('tenant') ?? '';
     const granted = this.route.snapshot.queryParamMap.get('admin_consent') === 'True';
+    const state = this.route.snapshot.queryParamMap.get('state') ?? '';
 
-    if (!tenant || !granted) {
+    if (!tenant || !state || !granted) {
       this.status.set('Consent was not completed');
       this.detail.set('Microsoft did not return a successful admin consent response.');
       return;
     }
 
-    this.api.saveAdminConsent({
+    this.api.completeAdminConsent({
       microsoftTenantId: tenant,
-      organizationName: `Tenant ${tenant.substring(0, 8)}`
+      adminConsentGranted: granted,
+      state
     }).subscribe({
       next: () => {
         this.status.set('Organization connected');

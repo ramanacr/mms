@@ -4,4 +4,6 @@ public sealed record ProfileDto(string DisplayName, string Email, string TenantI
 
 public sealed record DashboardStatsDto(int TotalRooms, int BookingsToday, bool AdminConsentGranted, bool GraphSyncActive);
 
-public sealed record AdminConsentRequest(string MicrosoftTenantId, string OrganizationName, string? CustomDomain);
+public sealed record AdminConsentStartResponse(string ConsentUrl);
+
+public sealed record AdminConsentCompleteRequest(string MicrosoftTenantId, bool AdminConsentGranted, string State);

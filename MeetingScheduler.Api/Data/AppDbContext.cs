@@ -15,6 +15,7 @@ public sealed class AppDbContext : DbContext
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<PendingAdminConsent> PendingAdminConsents => Set<PendingAdminConsent>();
     public DbSet<MeetingRoom> MeetingRooms => Set<MeetingRoom>();
     public DbSet<BookingSeries> BookingSeries => Set<BookingSeries>();
     public DbSet<BookingInstance> BookingInstances => Set<BookingInstance>();
@@ -24,6 +25,12 @@ public sealed class AppDbContext : DbContext
         modelBuilder.Entity<Tenant>()
             .HasIndex(t => t.MicrosoftTenantId)
             .IsUnique();
+
+        modelBuilder.Entity<PendingAdminConsent>()
+            .HasKey(c => c.State);
+
+        modelBuilder.Entity<PendingAdminConsent>()
+            .HasIndex(c => new { c.ExpectedMicrosoftTenantId, c.UsedAt });
 
         modelBuilder.Entity<MeetingRoom>()
             .HasIndex(r => new { r.TenantId, r.Name })

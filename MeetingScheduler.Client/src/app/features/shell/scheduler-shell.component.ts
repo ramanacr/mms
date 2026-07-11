@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -23,7 +24,23 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { buildCreateBookingRequest } from '../../core/booking.mapper';
-import { BookingInstance, DashboardStats, Room, UpsertRoomRequest } from '../../core/models';
+import { BookingInstance, DashboardStats, Profile, Room, UpsertRoomRequest } from '../../core/models';
+import { environment } from '../../../environments/environment';
+
+export const DEFAULT_PROFILE: Profile = { displayName: 'Scheduler User', email: '', tenantId: '', roles: [] };
+export type DevelopmentRole = 'admin' | 'user';
+
+export function resolveDevelopmentRole(pathname: string, storedRole: string | null): DevelopmentRole {
+  if (pathname.includes('/dev-user')) {
+    return 'user';
+  }
+
+  if (pathname.includes('/dev-admin')) {
+    return 'admin';
+  }
+
+  return storedRole === 'user' ? 'user' : 'admin';
+}
 
 @Component({
   standalone: true,
@@ -31,6 +48,7 @@ import { BookingInstance, DashboardStats, Room, UpsertRoomRequest } from '../../
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     ButtonModule,
     CardModule,
     DialogModule,
@@ -58,12 +76,19 @@ export class SchedulerShellComponent implements OnInit {
   readonly rooms = signal<Room[]>([]);
   readonly bookings = signal<BookingInstance[]>([]);
   readonly stats = signal<DashboardStats>({ totalRooms: 0, bookingsToday: 0, adminConsentGranted: false, graphSyncActive: false });
-  readonly profile = signal({ displayName: 'Scheduler User', email: '', tenantId: '', roles: ['OrgAdmin', 'OrgUser'] });
+  readonly profile = signal<Profile>(DEFAULT_PROFILE);
+  readonly profileLoaded = signal(false);
+  readonly profileLoadFailed = signal(false);
   readonly activeView = signal<'dashboard' | 'rooms' | 'calendar' | 'admin' | 'settings'>('dashboard');
   readonly roomDialogVisible = signal(false);
   readonly bookingDrawerVisible = signal(false);
   readonly editingRoom = signal<Room | null>(null);
   readonly savingMessage = signal('');
+  readonly adminOnboardingRoute = environment.production ? '/admin-onboarding' : '/dev-admin-onboarding';
+  readonly devAdminRoute = '/dev-admin';
+  readonly devUserRoute = '/dev-user';
+  readonly isDevelopment = !environment.production;
+  readonly devRole = signal<DevelopmentRole>('admin');
 
   readonly isAdmin = computed(() => this.profile().roles.includes('OrgAdmin'));
   readonly roomOptions = computed(() => this.rooms().filter((room) => room.isActive).map((room) => ({ label: room.name, value: room.id })));
@@ -124,13 +149,53 @@ export class SchedulerShellComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.applyDevelopmentRole();
+    this.loadAll();
+  }
+
+  switchView(view: 'dashboard' | 'rooms' | 'calendar' | 'admin' | 'settings'): void {
+    if (view === 'admin' && !this.isAdmin()) {
+      this.activeView.set('dashboard');
+      return;
+    }
+
+    this.activeView.set(view);
+  }
+
+  setDevelopmentRole(role: DevelopmentRole): void {
+    if (!this.isDevelopment) {
+      return;
+    }
+
+    localStorage.setItem('devRole', role);
+    this.devRole.set(role);
+    if (role === 'user' && this.activeView() === 'admin') {
+      this.activeView.set('dashboard');
+    }
+
+    this.profile.set(DEFAULT_PROFILE);
+    this.profileLoaded.set(false);
+    this.profileLoadFailed.set(false);
+    this.savingMessage.set('');
     this.loadAll();
   }
 
   loadAll(): void {
-    this.api.me().subscribe({ next: (profile) => this.profile.set(profile), error: () => undefined });
-    this.api.stats().subscribe({ next: (stats) => this.stats.set(stats), error: () => undefined });
-    this.api.rooms().subscribe({ next: (rooms) => this.rooms.set(rooms), error: () => this.seedDemoRooms() });
+    this.api.me().subscribe({
+      next: (profile) => {
+        this.profile.set(profile);
+        this.profileLoaded.set(true);
+        this.profileLoadFailed.set(false);
+      },
+      error: () => {
+        this.profile.set(DEFAULT_PROFILE);
+        this.profileLoaded.set(false);
+        this.profileLoadFailed.set(true);
+        this.savingMessage.set('Profile and tenant access could not be loaded. Please sign in again or contact an administrator.');
+      }
+    });
+    this.api.stats().subscribe({ next: (stats) => this.stats.set(stats), error: () => this.savingMessage.set('Dashboard stats could not be loaded.') });
+    this.api.rooms().subscribe({ next: (rooms) => this.rooms.set(rooms), error: () => this.savingMessage.set('Rooms could not be loaded. Check API configuration and permissions.') });
     this.loadBookings();
   }
 
@@ -140,7 +205,7 @@ export class SchedulerShellComponent implements OnInit {
     const end = new Date();
     end.setDate(end.getDate() + 45);
 
-    this.api.bookings(start, end).subscribe({ next: (bookings) => this.bookings.set(bookings), error: () => this.seedDemoBookings() });
+    this.api.bookings(start, end).subscribe({ next: (bookings) => this.bookings.set(bookings), error: () => this.savingMessage.set('Bookings could not be loaded. Check API configuration and permissions.') });
   }
 
   openNewRoom(): void {
@@ -206,51 +271,19 @@ export class SchedulerShellComponent implements OnInit {
     });
   }
 
-  private seedDemoRooms(): void {
-    const fallbackRooms: Room[] = [
-      { id: 'demo-a', name: 'Conference Room A', floor: '3', location: 'Floor 3, West Wing', capacity: 12, amenities: 'Whiteboard, TV, Teams panel', isActive: true },
-      { id: 'demo-b', name: 'Focus Studio', floor: '4', location: 'Floor 4, East Wing', capacity: 4, amenities: 'Display, phone booth', isActive: true },
-      { id: 'demo-c', name: 'Board Room', floor: '7', location: 'Floor 7, Executive', capacity: 18, amenities: 'Projector, conference phone', isActive: true }
-    ];
-    this.rooms.set(fallbackRooms);
-    this.stats.update((stats) => ({ ...stats, totalRooms: fallbackRooms.length }));
-  }
-
-  private seedDemoBookings(): void {
-    const now = new Date();
-    const demo: BookingInstance[] = [
-      {
-        id: 'booking-demo-1',
-        seriesId: null,
-        roomId: 'demo-a',
-        roomName: 'Conference Room A',
-        subject: 'Product Review',
-        organizerEmail: 'alex@contoso.com',
-        attendees: ['mira@contoso.com'],
-        startAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0).toISOString(),
-        endAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0).toISOString(),
-        isRecurring: false
-      },
-      {
-        id: 'booking-demo-2',
-        seriesId: 'series-demo',
-        roomId: 'demo-c',
-        roomName: 'Board Room',
-        subject: 'Weekly Staff Sync',
-        organizerEmail: 'nina@contoso.com',
-        attendees: ['ops@contoso.com'],
-        startAt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 14, 0).toISOString(),
-        endAt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 15, 0).toISOString(),
-        isRecurring: true
-      }
-    ];
-    this.bookings.set(demo);
-    this.stats.update((stats) => ({ ...stats, bookingsToday: 1 }));
-  }
-
   private toInputValue(date: Date): string {
     const offset = date.getTimezoneOffset();
     const local = new Date(date.getTime() - offset * 60_000);
     return local.toISOString().slice(0, 16);
+  }
+
+  private applyDevelopmentRole(): void {
+    if (!this.isDevelopment) {
+      return;
+    }
+
+    const role = resolveDevelopmentRole(window.location.pathname, localStorage.getItem('devRole'));
+    localStorage.setItem('devRole', role);
+    this.devRole.set(role);
   }
 }

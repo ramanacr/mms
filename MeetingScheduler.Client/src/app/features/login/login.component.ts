@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { AuthService } from '../../core/auth.service';
@@ -26,18 +27,21 @@ import { AuthService } from '../../core/auth.service';
   `
 })
 export class LoginComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private readonly router: Router, readonly auth: AuthService) {}
 
   ngOnInit(): void {
-    this.auth.isAuthenticated$.subscribe((isAuthenticated) => {
-      if (isAuthenticated) {
-        this.router.navigate(['/dashboard']);
-      }
-    });
+    this.auth.isAuthenticated$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((isAuthenticated) => {
+        if (isAuthenticated) {
+          this.router.navigate(['/dashboard']);
+        }
+      });
   }
 
   handleLogin(): void {
-    console.log('Login button clicked');
     this.auth.login();
   }
 }

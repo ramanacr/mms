@@ -38,12 +38,4 @@ export class AuthService {
   accountName(): string {
     return this.msal.instance.getActiveAccount()?.name ?? this.msal.instance.getAllAccounts()[0]?.username ?? 'Meeting Scheduler';
   }
-
-  triggerAdminConsent(): void {
-    const redirectUri = encodeURIComponent(`${window.location.origin}/admin-callback`);
-    const state = crypto.randomUUID();
-    sessionStorage.setItem('adminConsentState', state);
-    const consentUrl = `https://login.microsoftonline.com/common/adminconsent?client_id=${environment.auth.clientId}&redirect_uri=${redirectUri}&state=${state}`;
-    window.location.href = consentUrl;
-  }
 }

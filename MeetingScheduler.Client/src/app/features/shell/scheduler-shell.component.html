@@ -5,23 +5,25 @@
       <span>Room Scheduler</span>
     </div>
 
-    <button type="button" [class.active]="activeView() === 'dashboard'" (click)="activeView.set('dashboard')">
+    <button type="button" [class.active]="activeView() === 'dashboard'" (click)="switchView('dashboard')">
       <i class="pi pi-chart-line"></i>
       Dashboard
     </button>
-    <button type="button" [class.active]="activeView() === 'rooms'" (click)="activeView.set('rooms')">
+    <button type="button" [class.active]="activeView() === 'rooms'" (click)="switchView('rooms')">
       <i class="pi pi-building"></i>
       Rooms
     </button>
-    <button type="button" [class.active]="activeView() === 'calendar'" (click)="activeView.set('calendar')">
+    <button type="button" [class.active]="activeView() === 'calendar'" (click)="switchView('calendar')">
       <i class="pi pi-calendar"></i>
       Calendar
     </button>
-    <button type="button" [class.active]="activeView() === 'admin'" (click)="activeView.set('admin')">
-      <i class="pi pi-microsoft"></i>
-      Admin Consent
-    </button>
-    <button type="button" [class.active]="activeView() === 'settings'" (click)="activeView.set('settings')">
+    @if (isAdmin()) {
+      <button type="button" [class.active]="activeView() === 'admin'" (click)="switchView('admin')">
+        <i class="pi pi-microsoft"></i>
+        Admin Consent
+      </button>
+    }
+    <button type="button" [class.active]="activeView() === 'settings'" (click)="switchView('settings')">
       <i class="pi pi-cog"></i>
       Settings
     </button>
@@ -35,7 +37,7 @@
       </div>
       <div class="topbar-actions">
         <p-tag [value]="stats().adminConsentGranted ? 'Consent Granted' : 'Consent Pending'" [severity]="stats().adminConsentGranted ? 'success' : 'warn'" />
-        <p-tag [value]="isAdmin() ? 'OrgAdmin' : 'OrgUser'" severity="info" />
+        <p-tag [value]="profileLoaded() ? (isAdmin() ? 'OrgAdmin' : 'OrgUser') : (profileLoadFailed() ? 'Profile unavailable' : 'Loading role')" severity="info" />
         <p-button icon="pi pi-sign-out" [rounded]="true" [text]="true" ariaLabel="Sign out" (onClick)="auth.logout()" />
       </div>
     </header>
@@ -44,76 +46,156 @@
       <div class="notice">{{ savingMessage() }}</div>
     }
 
-    <section class="stats-grid">
-      <article class="stat-card">
-        <i class="pi pi-building"></i>
-        <span>Total Rooms</span>
-        <strong>{{ stats().totalRooms }}</strong>
-      </article>
-      <article class="stat-card amber">
-        <i class="pi pi-calendar-clock"></i>
-        <span>Bookings Today</span>
-        <strong>{{ stats().bookingsToday }}</strong>
-      </article>
-      <article class="stat-card teal">
-        <i class="pi pi-refresh"></i>
-        <span>Graph Sync</span>
-        <strong>{{ stats().graphSyncActive ? 'Active' : 'Waiting' }}</strong>
-      </article>
-      <article class="stat-card">
-        <i class="pi pi-users"></i>
-        <span>Role</span>
-        <strong>{{ isAdmin() ? 'Admin' : 'User' }}</strong>
-      </article>
-    </section>
+    @if (activeView() === 'dashboard') {
+      <section class="stats-grid">
+        <article class="stat-card">
+          <i class="pi pi-building"></i>
+          <span>Total Rooms</span>
+          <strong>{{ stats().totalRooms }}</strong>
+        </article>
+        <article class="stat-card amber">
+          <i class="pi pi-calendar-clock"></i>
+          <span>Bookings Today</span>
+          <strong>{{ stats().bookingsToday }}</strong>
+        </article>
+        <article class="stat-card teal">
+          <i class="pi pi-refresh"></i>
+          <span>Graph Sync</span>
+          <strong>{{ stats().graphSyncActive ? 'Active' : 'Waiting' }}</strong>
+        </article>
+        <article class="stat-card">
+          <i class="pi pi-users"></i>
+          <span>Role</span>
+          <strong>{{ profileLoaded() ? (isAdmin() ? 'Admin' : 'User') : 'Loading' }}</strong>
+        </article>
+      </section>
 
-    <section class="content-grid">
-      <p-card styleClass="panel rooms-panel">
-        <ng-template pTemplate="header">
-          <div class="panel-header">
-            <div>
-              <h2>Manage Meeting Rooms</h2>
-              <span>Global room inventory for this tenant</span>
+      <section class="content-grid">
+        <p-card styleClass="panel calendar-panel">
+          <ng-template pTemplate="header">
+            <div class="panel-header">
+              <div>
+                <h2>Upcoming Availability</h2>
+                <span>Book a room or switch to Calendar for the full schedule</span>
+              </div>
+              <p-button label="Create Booking" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
+            </div>
+          </ng-template>
+          <full-calendar [options]="calendarOptions()" />
+        </p-card>
+
+        <aside class="side-stack">
+          <p-card styleClass="panel booking-panel">
+            <ng-template pTemplate="header">
+              <div class="panel-header compact">
+                <h2>Quick Booking</h2>
+              </div>
+            </ng-template>
+            <p-button label="New Booking" icon="pi pi-calendar-plus" styleClass="w-full" (onClick)="bookingDrawerVisible.set(true)" />
+            <div class="next-slot">
+              <span>First available room</span>
+              <strong>{{ rooms()[0]?.name || 'No rooms available' }}</strong>
+            </div>
+          </p-card>
+
+          <p-card styleClass="panel integration-panel">
+            <ng-template pTemplate="header">
+              <div class="panel-header compact">
+                <h2>Microsoft Integration</h2>
+              </div>
+            </ng-template>
+            <div class="integration-row">
+              <span>Admin Consent</span>
+              <p-tag [value]="stats().adminConsentGranted ? 'Granted' : 'Pending'" [severity]="stats().adminConsentGranted ? 'success' : 'warn'" />
+            </div>
+            <div class="integration-row">
+              <span>Calendar Sync</span>
+              <p-tag [value]="stats().graphSyncActive ? 'Active' : 'Waiting'" severity="info" />
             </div>
             @if (isAdmin()) {
-              <p-button label="Add Room" icon="pi pi-plus" size="small" (onClick)="openNewRoom()" />
+              <p-divider />
+              <p-button label="Authorize Tenant" icon="pi pi-microsoft" styleClass="w-full" [routerLink]="adminOnboardingRoute" />
             }
-          </div>
-        </ng-template>
+          </p-card>
+        </aside>
+      </section>
+    }
 
-        <p-table [value]="rooms()" [rows]="6" [paginator]="true" responsiveLayout="scroll">
+    @if (activeView() === 'rooms') {
+      <section class="single-panel">
+        <p-card styleClass="panel rooms-panel">
           <ng-template pTemplate="header">
-            <tr>
-              <th>Name</th>
-              <th>Location</th>
-              <th>Capacity</th>
-              <th>Amenities</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
+            <div class="panel-header">
+              <div>
+                <h2>{{ isAdmin() ? 'Manage Meeting Rooms' : 'Available Meeting Rooms' }}</h2>
+                <span>{{ isAdmin() ? 'Global room inventory for this tenant' : 'Rooms available for meeting scheduling' }}</span>
+              </div>
+              @if (isAdmin()) {
+                <p-button label="Add Room" icon="pi pi-plus" size="small" (onClick)="openNewRoom()" />
+              }
+            </div>
           </ng-template>
-          <ng-template pTemplate="body" let-room>
-            <tr>
-              <td>{{ room.name }}</td>
-              <td>{{ room.location }}</td>
-              <td>{{ room.capacity }}</td>
-              <td>{{ room.amenities || 'Standard setup' }}</td>
-              <td>
-                <p-tag [value]="room.isActive ? 'Active' : 'Inactive'" [severity]="room.isActive ? 'success' : 'danger'" />
-              </td>
-              <td>
-                <p-button icon="pi pi-pencil" [text]="true" [disabled]="!isAdmin()" ariaLabel="Edit room" (onClick)="editRoom(room)" />
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </p-card>
 
-      <aside class="side-stack">
+          <p-table [value]="rooms()" [rows]="8" [paginator]="true" responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Capacity</th>
+                <th>Amenities</th>
+                <th>Status</th>
+                @if (isAdmin()) {
+                  <th>Action</th>
+                }
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-room>
+              <tr>
+                <td>{{ room.name }}</td>
+                <td>{{ room.location }}</td>
+                <td>{{ room.capacity }}</td>
+                <td>{{ room.amenities || 'Standard setup' }}</td>
+                <td>
+                  <p-tag [value]="room.isActive ? 'Active' : 'Inactive'" [severity]="room.isActive ? 'success' : 'danger'" />
+                </td>
+                @if (isAdmin()) {
+                  <td>
+                    <p-button icon="pi pi-pencil" [text]="true" ariaLabel="Edit room" (onClick)="editRoom(room)" />
+                  </td>
+                }
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </section>
+    }
+
+    @if (activeView() === 'calendar') {
+      <section class="single-panel">
+        <p-card styleClass="panel calendar-panel">
+          <ng-template pTemplate="header">
+            <div class="panel-header">
+              <div>
+                <h2>Room Availability</h2>
+                <span>Weekly schedule with recurring series highlighted</span>
+              </div>
+              <p-button label="Create Booking" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
+            </div>
+          </ng-template>
+          <full-calendar [options]="calendarOptions()" />
+        </p-card>
+      </section>
+    }
+
+    @if (activeView() === 'admin' && isAdmin()) {
+      <section class="single-panel narrow">
         <p-card styleClass="panel integration-panel">
           <ng-template pTemplate="header">
-            <div class="panel-header compact">
-              <h2>Microsoft Integration</h2>
+            <div class="panel-header">
+              <div>
+                <h2>Microsoft Integration</h2>
+                <span>Tenant-level consent and calendar sync status</span>
+              </div>
             </div>
           </ng-template>
           <div class="integration-row">
@@ -125,38 +207,48 @@
             <p-tag [value]="stats().graphSyncActive ? 'Active' : 'Waiting'" severity="info" />
           </div>
           <p-divider />
-          <p-button label="Authorize Tenant" icon="pi pi-microsoft" styleClass="w-full" routerLink="/admin-onboarding" />
+          <p-button label="Authorize Tenant" icon="pi pi-microsoft" [routerLink]="adminOnboardingRoute" />
         </p-card>
+      </section>
+    }
 
-        <p-card styleClass="panel booking-panel">
+    @if (activeView() === 'settings') {
+      <section class="single-panel narrow">
+        <p-card styleClass="panel settings-panel">
           <ng-template pTemplate="header">
-            <div class="panel-header compact">
-              <h2>Quick Booking</h2>
+            <div class="panel-header">
+              <div>
+                <h2>Settings</h2>
+                <span>Profile and local development persona</span>
+              </div>
             </div>
           </ng-template>
-          <p-button label="New Booking" icon="pi pi-calendar-plus" styleClass="w-full" (onClick)="bookingDrawerVisible.set(true)" />
-          <div class="next-slot">
-            <span>Next available</span>
-            <strong>{{ rooms()[0]?.name || 'Add a room' }}</strong>
+          <div class="settings-row">
+            <span>Name</span>
+            <strong>{{ profile().displayName }}</strong>
           </div>
-        </p-card>
-      </aside>
-    </section>
-
-    <section class="calendar-section">
-      <p-card styleClass="panel calendar-panel">
-        <ng-template pTemplate="header">
-          <div class="panel-header">
-            <div>
-              <h2>Room Availability</h2>
-              <span>Weekly schedule with recurring series highlighted</span>
+          <div class="settings-row">
+            <span>Email</span>
+            <strong>{{ profile().email || auth.accountName() || 'Not loaded' }}</strong>
+          </div>
+          <div class="settings-row">
+            <span>Tenant</span>
+            <strong>{{ profile().tenantId || 'Not loaded' }}</strong>
+          </div>
+          <div class="settings-row">
+            <span>Role</span>
+            <strong>{{ profileLoaded() ? (isAdmin() ? 'OrgAdmin' : 'OrgUser') : 'Not loaded' }}</strong>
+          </div>
+          @if (isDevelopment) {
+            <p-divider />
+            <div class="dev-persona">
+              <p-button label="Use Dev Admin" icon="pi pi-user-plus" [outlined]="devRole() !== 'admin'" (onClick)="setDevelopmentRole('admin')" [routerLink]="devAdminRoute" />
+              <p-button label="Use Dev User" icon="pi pi-user" [outlined]="devRole() !== 'user'" severity="secondary" (onClick)="setDevelopmentRole('user')" [routerLink]="devUserRoute" />
             </div>
-            <p-button label="Create Booking" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
-          </div>
-        </ng-template>
-        <full-calendar [options]="calendarOptions()" />
-      </p-card>
-    </section>
+          }
+        </p-card>
+      </section>
+    }
   </main>
 </div>
 
