@@ -177,6 +177,38 @@ namespace MeetingScheduler.Api.Migrations
                     b.ToTable("MeetingRooms");
                 });
 
+            modelBuilder.Entity("MeetingScheduler.Api.Models.PendingAdminConsent", b =>
+                {
+                    b.Property<string>("State")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExpectedMicrosoftTenantId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("RequestedByEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("State");
+
+                    b.HasIndex("ExpectedMicrosoftTenantId", "UsedAt");
+
+                    b.ToTable("PendingAdminConsents");
+                });
+
             modelBuilder.Entity("MeetingScheduler.Api.Models.Tenant", b =>
                 {
                     b.Property<Guid>("Id")

@@ -19,7 +19,7 @@ export function msalInstanceFactory(): IPublicClientApplication {
       redirectUri: environment.auth.redirectUri
     },
     cache: {
-      cacheLocation: 'localStorage'
+      cacheLocation: 'sessionStorage'
     }
   });
 }
@@ -35,7 +35,9 @@ export function msalGuardConfigFactory(): MsalGuardConfiguration {
 
 export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  protectedResourceMap.set(`${environment.apiBaseUrl}/*`, environment.auth.apiScopes);
+  if (environment.production) {
+    protectedResourceMap.set(`${environment.apiBaseUrl}/*`, environment.auth.apiScopes);
+  }
   protectedResourceMap.set('https://graph.microsoft.com/v1.0/me', ['User.Read']);
 
   return {

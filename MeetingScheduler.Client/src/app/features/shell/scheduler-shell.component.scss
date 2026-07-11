@@ -172,6 +172,15 @@ h2 {
   gap: 1rem;
 }
 
+.single-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.single-panel.narrow {
+  max-width: 48rem;
+}
+
 .panel-header {
   padding: 1rem 1rem 0;
   display: flex;
@@ -212,8 +221,27 @@ h2 {
   font-size: 0.82rem;
 }
 
-.calendar-section {
-  margin-top: 1rem;
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.settings-row span {
+  color: #64748b;
+}
+
+.settings-row strong {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.dev-persona {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .dialog-form {

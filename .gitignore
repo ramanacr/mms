@@ -31,3 +31,5 @@ yarn-error.log*
 /MeetingScheduler.Api/obj
 /MeetingScheduler.Tests/bin/Debug/net10.0
 /MeetingScheduler.Tests/obj
+/.codex/run-logs
+/.logs
