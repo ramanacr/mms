@@ -176,6 +176,13 @@ Base route: `/api`
 - `DELETE /api/bookings/{id}?deleteSeries={bool}`
 - `POST /api/tenants/admin-consent` (anonymous onboarding callback)
 
+## Room Mailbox Booking
+
+For Microsoft-native room booking, configure each room with an Exchange room mailbox in `ExchangeEmail`.
+When a user schedules a meeting, MMS sends the selected room mailbox as a Microsoft Graph `resource` attendee and also sets the event location to the room name.
+
+Rooms without `ExchangeEmail` can still be reserved locally in MMS, but they will not receive or process Microsoft room resource invites.
+
 Authorization policies:
 - `OrgAdmin`
 - `OrgUser`
