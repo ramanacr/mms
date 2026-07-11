@@ -34,4 +34,19 @@ describe('buildCreateBookingRequest', () => {
     expect(request.recurrence).toMatchObject({ type: 'Weekly', interval: 2 });
     expect(request.recurrence?.until).toContain('2026-06');
   });
+
+  it('trims comma-separated attendees and removes blank entries', () => {
+    const request = buildCreateBookingRequest({
+      roomId: 'room-1',
+      subject: 'Planning',
+      attendees: ' alice@contoso.com, , bob@contoso.com ',
+      startAt: '2026-05-01T09:00',
+      endAt: '2026-05-01T10:00',
+      recurrenceType: 'None',
+      recurrenceInterval: 1,
+      recurrenceUntil: ''
+    }, 'Asia/Calcutta');
+
+    expect(request.attendees).toEqual(['alice@contoso.com', 'bob@contoso.com']);
+  });
 });
