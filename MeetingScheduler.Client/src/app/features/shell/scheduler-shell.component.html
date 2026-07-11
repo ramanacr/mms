@@ -305,7 +305,26 @@
     </section>
 
     <section class="meeting-section">
-      <label class="full-span">Body<textarea pTextarea formControlName="body" rows="8" placeholder="Agenda, links, and notes"></textarea></label>
+      <label class="full-span">
+        Body
+        <p-editor formControlName="body" [style]="{ height: '12rem' }" placeholder="Agenda, links, and notes">
+          <ng-template pTemplate="header">
+            <span class="ql-formats">
+              <button type="button" class="ql-bold" aria-label="Bold"></button>
+              <button type="button" class="ql-italic" aria-label="Italic"></button>
+              <button type="button" class="ql-underline" aria-label="Underline"></button>
+            </span>
+            <span class="ql-formats">
+              <button type="button" class="ql-list" value="ordered" aria-label="Ordered list"></button>
+              <button type="button" class="ql-list" value="bullet" aria-label="Bullet list"></button>
+            </span>
+            <span class="ql-formats">
+              <button type="button" class="ql-link" aria-label="Link"></button>
+              <button type="button" class="ql-clean" aria-label="Clear formatting"></button>
+            </span>
+          </ng-template>
+        </p-editor>
+      </label>
     </section>
 
     <div class="dialog-actions meeting-actions">

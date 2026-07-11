@@ -71,12 +71,12 @@ public sealed class GraphCalendarServiceTests
     }
 
     [Fact]
-    public void CreateBody_returns_plain_text_body_when_body_is_present()
+    public void CreateBody_returns_html_body_when_body_is_present()
     {
-        var body = GraphCalendarService.CreateBody(" Please review before joining. ");
+        var body = GraphCalendarService.CreateBody(" <p><strong>Please review</strong> before joining.</p> ");
 
         Assert.NotNull(body);
-        Assert.Equal(BodyType.Text, body.ContentType);
-        Assert.Equal("Please review before joining.", body.Content);
+        Assert.Equal(BodyType.Html, body.ContentType);
+        Assert.Equal("<p><strong>Please review</strong> before joining.</p>", body.Content);
     }
 }

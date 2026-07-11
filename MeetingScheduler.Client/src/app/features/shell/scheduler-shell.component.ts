@@ -14,6 +14,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { DrawerModule } from 'primeng/drawer';
+import { EditorModule } from 'primeng/editor';
 import { FluidModule } from 'primeng/fluid';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
@@ -80,6 +81,7 @@ export function buildTimeZoneOptions(currentTimeZone = DEFAULT_TIME_ZONE): { lab
     DialogModule,
     DividerModule,
     DrawerModule,
+    EditorModule,
     FluidModule,
     FullCalendarModule,
     InputNumberModule,

@@ -97,7 +97,7 @@ public sealed class GraphCalendarService : IGraphCalendarService
             ? null
             : new ItemBody
             {
-                ContentType = BodyType.Text,
+                ContentType = BodyType.Html,
                 Content = body.Trim()
             };
     }
