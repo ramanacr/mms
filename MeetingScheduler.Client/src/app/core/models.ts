@@ -48,6 +48,17 @@ export interface CreateBookingRequest {
   } | null;
 }
 
+export interface UpdateBookingRequest {
+  roomId: string;
+  subject: string;
+  attendees: string[];
+  optionalAttendees?: string[] | null;
+  body?: string | null;
+  startAt: string;
+  endAt: string;
+  timeZone: string;
+}
+
 export interface DashboardStats {
   totalRooms: number;
   bookingsToday: number;

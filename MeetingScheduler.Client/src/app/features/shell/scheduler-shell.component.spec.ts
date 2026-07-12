@@ -1,4 +1,6 @@
 import '@angular/compiler';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildTimeZoneOptions,
@@ -38,5 +40,40 @@ describe('SchedulerShellComponent defaults', () => {
     expect(isRecurringSelection('Daily')).toBe(true);
     expect(isRecurringSelection('Weekly')).toBe(true);
     expect(isRecurringSelection('Monthly')).toBe(true);
+  });
+
+  it('configures FullCalendar with edit handlers for existing meetings', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/app/features/shell/scheduler-shell.component.ts'), 'utf-8');
+
+    expect(source).toContain('editable: true');
+    expect(source).toContain('eventClick:');
+    expect(source).toContain('eventDrop:');
+    expect(source).toContain('eventResize:');
+  });
+
+  it('does not continuously bind the rich text editor HTML while the user types', () => {
+    const template = readFileSync(resolve(process.cwd(), 'src/app/features/shell/scheduler-shell.component.html'), 'utf-8');
+
+    expect(template).not.toContain('[innerHTML]="bookingForm.controls.body.value"');
+    expect(template).toContain('(input)="updateBodyFromEditor($event)"');
+  });
+
+  it('keeps the rich text editor outside a native label so user focus is not redirected', () => {
+    const template = readFileSync(resolve(process.cwd(), 'src/app/features/shell/scheduler-shell.component.html'), 'utf-8');
+
+    expect(template).not.toMatch(/<label class="full-span">\s*Body[\s\S]*class="editor-surface"/);
+    expect(template).toContain('aria-labelledby="bodyEditorLabel"');
+    expect(template).toContain('tabindex="0"');
+  });
+
+  it('uses toast feedback for validation and save outcomes', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/app/features/shell/scheduler-shell.component.ts'), 'utf-8');
+
+    expect(source).toContain("inject(ToastService)");
+    expect(source).toContain("this.toasts.validation('Please complete required room fields.')");
+    expect(source).toContain("this.toasts.validation('Please complete required meeting fields.')");
+    expect(source).toContain("this.toasts.success('Room saved.')");
+    expect(source).toContain("this.toasts.success('Meeting updated.')");
+    expect(source).toContain("this.toasts.error(");
   });
 });

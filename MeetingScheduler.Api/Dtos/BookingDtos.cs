@@ -13,6 +13,16 @@ public sealed record CreateBookingRequest(
     string[]? OptionalAttendees = null,
     string? Body = null);
 
+public sealed record UpdateBookingRequest(
+    Guid RoomId,
+    string Subject,
+    string[] Attendees,
+    DateTime StartAt,
+    DateTime EndAt,
+    string TimeZone,
+    string[]? OptionalAttendees = null,
+    string? Body = null);
+
 public sealed record BookingInstanceDto(
     Guid Id,
     Guid? SeriesId,

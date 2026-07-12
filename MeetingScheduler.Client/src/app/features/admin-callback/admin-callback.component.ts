@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { ToastService } from '../../core/toast.service';
 
 @Component({
   standalone: true,
@@ -24,7 +25,7 @@ export class AdminCallbackComponent implements OnInit {
   readonly status = signal('Completing tenant registration');
   readonly detail = signal('Saving Microsoft tenant consent in the scheduler.');
 
-  constructor(private readonly route: ActivatedRoute, private readonly api: ApiService) {}
+  constructor(private readonly route: ActivatedRoute, private readonly api: ApiService, private readonly toasts?: ToastService) {}
 
   ngOnInit(): void {
     const tenant = this.route.snapshot.queryParamMap.get('tenant') ?? '';
@@ -34,6 +35,7 @@ export class AdminCallbackComponent implements OnInit {
     if (!tenant || !state || !granted) {
       this.status.set('Consent was not completed');
       this.detail.set('Microsoft did not return a successful admin consent response.');
+      this.toasts?.validation('Microsoft did not return a successful admin consent response.');
       return;
     }
 
@@ -45,10 +47,12 @@ export class AdminCallbackComponent implements OnInit {
       next: () => {
         this.status.set('Organization connected');
         this.detail.set('Users from this tenant can now sign in and book rooms.');
+        this.toasts?.success('Organization connected.');
       },
       error: () => {
         this.status.set('Registration failed');
         this.detail.set('The consent returned from Microsoft, but the API could not save the tenant.');
+        this.toasts?.error('The consent returned from Microsoft, but the API could not save the tenant.');
       }
     });
   }

@@ -18,4 +18,9 @@ public sealed class DevelopmentGraphCalendarService : IGraphCalendarService
     {
         return Task.CompletedTask;
     }
+
+    public Task UpdateEventAsync(string graphEventId, MeetingRoom room, UpdateBookingRequest request, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
 }

@@ -77,7 +77,7 @@
               <h2>Upcoming Availability</h2>
               <span>Book a room or switch to Calendar for the full schedule</span>
             </div>
-            <button type="button" class="btn btn-small" (click)="bookingDrawerVisible.set(true)">Schedule Meeting</button>
+            <button type="button" class="btn btn-small" (click)="openNewBooking()">Schedule Meeting</button>
           </div>
           <div class="panel-body">
             <full-calendar [options]="calendarOptions()" />
@@ -90,7 +90,7 @@
               <h2>Quick Meeting</h2>
             </div>
             <div class="panel-body">
-              <button type="button" class="btn btn-block" (click)="bookingDrawerVisible.set(true)">Schedule Meeting</button>
+              <button type="button" class="btn btn-block" (click)="openNewBooking()">Schedule Meeting</button>
               <div class="next-slot">
                 <span>First available room</span>
                 <strong>{{ rooms()[0]?.name || 'No rooms available' }}</strong>
@@ -175,7 +175,7 @@
               <h2>Room Availability</h2>
               <span>Weekly schedule with recurring series highlighted</span>
             </div>
-            <button type="button" class="btn btn-small" (click)="bookingDrawerVisible.set(true)">Schedule Meeting</button>
+            <button type="button" class="btn btn-small" (click)="openNewBooking()">Schedule Meeting</button>
           </div>
           <div class="panel-body">
             <full-calendar [options]="calendarOptions()" />
@@ -275,10 +275,10 @@
 
 @if (bookingDrawerVisible()) {
   <div class="drawer-backdrop" role="presentation" (click)="bookingDrawerVisible.set(false)">
-    <aside class="meeting-drawer" role="dialog" aria-modal="true" aria-label="Schedule Meeting" (click)="$event.stopPropagation()">
+    <aside class="meeting-drawer" role="dialog" aria-modal="true" [attr.aria-label]="editingBooking() ? 'Edit Meeting' : 'Schedule Meeting'" (click)="$event.stopPropagation()">
       <header class="drawer-header">
-        <h2>Schedule Meeting</h2>
-        <button type="button" class="icon-button" aria-label="Close meeting scheduler" (click)="bookingDrawerVisible.set(false)">X</button>
+        <h2>{{ editingBooking() ? 'Edit Meeting' : 'Schedule Meeting' }}</h2>
+        <button type="button" class="icon-button" aria-label="Close meeting scheduler" (click)="closeBookingDrawer()">X</button>
       </header>
 
       <form class="dialog-form meeting-form" [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
@@ -352,8 +352,8 @@
         </section>
 
         <section class="meeting-section">
-          <label class="full-span">
-            Body
+          <div class="field-group full-span">
+            <span id="bodyEditorLabel">Body</span>
             <div class="rich-editor">
               <div class="editor-toolbar" aria-label="Body formatting toolbar">
                 <button type="button" title="Bold" (click)="formatBody('bold')">B</button>
@@ -364,14 +364,14 @@
                 <button type="button" title="Link" (click)="formatBody('createLink')">Link</button>
                 <button type="button" title="Clear formatting" (click)="formatBody('removeFormat')">Clear</button>
               </div>
-              <div class="editor-surface" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Agenda, links, and notes" [innerHTML]="bookingForm.controls.body.value" (input)="updateBodyFromEditor($event)"></div>
+              <div #bodyEditor class="editor-surface" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="bodyEditorLabel" tabindex="0" data-placeholder="Agenda, links, and notes" (input)="updateBodyFromEditor($event)"></div>
             </div>
-          </label>
+          </div>
         </section>
 
         <div class="dialog-actions meeting-actions">
-          <button class="btn btn-secondary" type="button" (click)="bookingDrawerVisible.set(false)">Cancel</button>
-          <button class="btn" type="submit">Send Invite & Book Room</button>
+          <button class="btn btn-secondary" type="button" (click)="closeBookingDrawer()">Cancel</button>
+          <button class="btn" type="submit">{{ editingBooking() ? 'Update Meeting' : 'Send Invite & Book Room' }}</button>
         </div>
       </form>
     </aside>

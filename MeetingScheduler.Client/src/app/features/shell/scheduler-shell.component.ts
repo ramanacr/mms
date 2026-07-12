@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -10,7 +10,8 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { BookingFormValue, buildCreateBookingRequest } from '../../core/booking.mapper';
-import { BookingInstance, DashboardStats, Profile, Room, UpsertRoomRequest } from '../../core/models';
+import { BookingInstance, DashboardStats, Profile, Room, UpdateBookingRequest, UpsertRoomRequest } from '../../core/models';
+import { ToastService } from '../../core/toast.service';
 import { environment } from '../../../environments/environment';
 
 export const DEFAULT_PROFILE: Profile = { displayName: 'Scheduler User', email: '', tenantId: '', roles: [] };
@@ -74,6 +75,7 @@ export function isRecurringSelection(recurrenceType: string | null | undefined):
 export class SchedulerShellComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
+  private readonly toasts = inject(ToastService);
   readonly auth = inject(AuthService);
 
   readonly rooms = signal<Room[]>([]);
@@ -86,6 +88,7 @@ export class SchedulerShellComponent implements OnInit {
   readonly roomDialogVisible = signal(false);
   readonly bookingDrawerVisible = signal(false);
   readonly editingRoom = signal<Room | null>(null);
+  readonly editingBooking = signal<BookingInstance | null>(null);
   readonly savingMessage = signal('');
   readonly adminOnboardingRoute = environment.production ? '/admin-onboarding' : '/dev-admin-onboarding';
   readonly devAdminRoute = '/dev-admin';
@@ -114,6 +117,9 @@ export class SchedulerShellComponent implements OnInit {
     height: 560,
     nowIndicator: true,
     selectable: true,
+    editable: true,
+    eventStartEditable: true,
+    eventDurationEditable: true,
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
@@ -125,16 +131,30 @@ export class SchedulerShellComponent implements OnInit {
       start: booking.startAt,
       end: booking.endAt,
       backgroundColor: booking.isRecurring ? '#0f766e' : '#1d4ed8',
-      borderColor: booking.isRecurring ? '#0f766e' : '#1d4ed8'
+      borderColor: booking.isRecurring ? '#0f766e' : '#1d4ed8',
+      extendedProps: { booking }
     })),
     select: (selection) => {
-      this.bookingForm.patchValue({
-        startAt: selection.start,
-        endAt: selection.end
-      });
-      this.bookingDrawerVisible.set(true);
+      this.openNewBooking(selection.start, selection.end);
+    },
+    eventClick: (eventInfo) => {
+      this.openExistingBooking(eventInfo.event.extendedProps['booking'] as BookingInstance);
+    },
+    eventDrop: (eventInfo) => {
+      this.saveBookingTimeChange(eventInfo.event.extendedProps['booking'] as BookingInstance, eventInfo.event.start, eventInfo.event.end, () => eventInfo.revert());
+    },
+    eventResize: (eventInfo) => {
+      this.saveBookingTimeChange(eventInfo.event.extendedProps['booking'] as BookingInstance, eventInfo.event.start, eventInfo.event.end, () => eventInfo.revert());
     }
   }));
+
+  private bodyEditor?: ElementRef<HTMLElement>;
+
+  @ViewChild('bodyEditor')
+  set bodyEditorRef(editor: ElementRef<HTMLElement> | undefined) {
+    this.bodyEditor = editor;
+    this.syncBodyEditor();
+  }
 
   readonly roomForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -192,6 +212,7 @@ export class SchedulerShellComponent implements OnInit {
     this.profileLoaded.set(false);
     this.profileLoadFailed.set(false);
     this.savingMessage.set('');
+    this.toasts.info(`Development role switched to ${role}.`);
     this.loadAll();
   }
 
@@ -206,11 +227,11 @@ export class SchedulerShellComponent implements OnInit {
         this.profile.set(DEFAULT_PROFILE);
         this.profileLoaded.set(false);
         this.profileLoadFailed.set(true);
-        this.savingMessage.set('Profile and tenant access could not be loaded. Please sign in again or contact an administrator.');
+        this.showPersistentError('Profile and tenant access could not be loaded. Please sign in again or contact an administrator.');
       }
     });
-    this.api.stats().subscribe({ next: (stats) => this.stats.set(stats), error: () => this.savingMessage.set('Dashboard stats could not be loaded.') });
-    this.api.rooms().subscribe({ next: (rooms) => this.rooms.set(rooms), error: () => this.savingMessage.set('Rooms could not be loaded. Check API configuration and permissions.') });
+    this.api.stats().subscribe({ next: (stats) => this.stats.set(stats), error: () => this.showPersistentError('Dashboard stats could not be loaded.') });
+    this.api.rooms().subscribe({ next: (rooms) => this.rooms.set(rooms), error: () => this.showPersistentError('Rooms could not be loaded. Check API configuration and permissions.') });
     this.loadBookings();
   }
 
@@ -220,7 +241,7 @@ export class SchedulerShellComponent implements OnInit {
     const end = new Date();
     end.setDate(end.getDate() + 45);
 
-    this.api.bookings(start, end).subscribe({ next: (bookings) => this.bookings.set(bookings), error: () => this.savingMessage.set('Bookings could not be loaded. Check API configuration and permissions.') });
+    this.api.bookings(start, end).subscribe({ next: (bookings) => this.bookings.set(bookings), error: () => this.showPersistentError('Bookings could not be loaded. Check API configuration and permissions.') });
   }
 
   openNewRoom(): void {
@@ -246,6 +267,7 @@ export class SchedulerShellComponent implements OnInit {
   saveRoom(): void {
     if (this.roomForm.invalid) {
       this.roomForm.markAllAsTouched();
+      this.toasts.validation('Please complete required room fields.');
       return;
     }
 
@@ -256,14 +278,63 @@ export class SchedulerShellComponent implements OnInit {
     save$.subscribe({
       next: () => {
         this.roomDialogVisible.set(false);
+        this.toasts.success('Room saved.');
         this.loadAll();
       },
-      error: () => this.savingMessage.set('Room could not be saved. Check API configuration and permissions.')
+      error: () => this.toasts.error('Room could not be saved. Check API configuration and permissions.')
     });
   }
 
   deleteRoom(room: Room): void {
-    this.api.deleteRoom(room.id).subscribe({ next: () => this.loadAll() });
+    this.api.deleteRoom(room.id).subscribe({
+      next: () => {
+        this.toasts.success('Room deleted.');
+        this.loadAll();
+      },
+      error: () => this.toasts.error('Room could not be deleted.')
+    });
+  }
+
+  openNewBooking(startAt = new Date(), endAt = new Date(Date.now() + 60 * 60 * 1000)): void {
+    this.editingBooking.set(null);
+    this.bookingForm.reset({
+      subject: '',
+      roomId: '',
+      to: [],
+      cc: [],
+      bcc: [],
+      body: '',
+      startAt,
+      endAt,
+      timeZone: DEFAULT_TIME_ZONE,
+      recurrenceType: 'None',
+      recurrenceInterval: 1,
+      recurrenceUntil: null
+    });
+    this.syncRecurrenceControls();
+    this.bookingDrawerVisible.set(true);
+    this.syncBodyEditorAfterRender();
+  }
+
+  openExistingBooking(booking: BookingInstance): void {
+    this.editingBooking.set(booking);
+    this.bookingForm.reset({
+      subject: booking.subject,
+      roomId: booking.roomId,
+      to: booking.attendees,
+      cc: [],
+      bcc: [],
+      body: '',
+      startAt: new Date(booking.startAt),
+      endAt: new Date(booking.endAt),
+      timeZone: DEFAULT_TIME_ZONE,
+      recurrenceType: 'None',
+      recurrenceInterval: 1,
+      recurrenceUntil: null
+    });
+    this.syncRecurrenceControls();
+    this.bookingDrawerVisible.set(true);
+    this.syncBodyEditorAfterRender();
   }
 
   toDateTimeLocal(value: Date | null): string {
@@ -345,20 +416,59 @@ export class SchedulerShellComponent implements OnInit {
   submitBooking(): void {
     if (this.bookingForm.invalid) {
       this.bookingForm.markAllAsTouched();
+      this.toasts.validation('Please complete required meeting fields.');
       return;
     }
 
     const value = this.bookingForm.getRawValue();
+    const current = this.editingBooking();
+    if (current) {
+      this.api.updateBooking(current.id, this.buildUpdateBookingRequest()).subscribe({
+        next: () => {
+          this.closeBookingDrawer();
+          this.toasts.success('Meeting updated.');
+          this.loadAll();
+        },
+        error: () => this.toasts.error('Meeting invite could not be updated or the room is already reserved for that time.')
+      });
+      return;
+    }
+
     const recurrenceType = value.recurrenceType as 'None' | 'Daily' | 'Weekly' | 'Monthly';
     this.api.createBooking(buildCreateBookingRequest({
       ...value,
       recurrenceType
     } as BookingFormValue)).subscribe({
       next: () => {
-        this.bookingDrawerVisible.set(false);
+        this.closeBookingDrawer();
+        this.toasts.success('Meeting scheduled.');
         this.loadAll();
       },
-      error: () => this.savingMessage.set('Meeting invite could not be sent or the room is already reserved for that time.')
+      error: () => this.toasts.error('Meeting invite could not be sent or the room is already reserved for that time.')
+    });
+  }
+
+  closeBookingDrawer(): void {
+    this.bookingDrawerVisible.set(false);
+    this.editingBooking.set(null);
+  }
+
+  private saveBookingTimeChange(booking: BookingInstance, start: Date | null, end: Date | null, revert: () => void): void {
+    if (!start || !end) {
+      revert();
+      return;
+    }
+
+    const request = this.buildUpdateBookingRequestForBooking(booking, start, end);
+    this.api.updateBooking(booking.id, request).subscribe({
+      next: () => {
+        this.toasts.success('Meeting time updated.');
+        this.loadAll();
+      },
+      error: () => {
+        revert();
+        this.toasts.error('Meeting time could not be updated or the room is already reserved for that time.');
+      }
     });
   }
 
@@ -386,5 +496,47 @@ export class SchedulerShellComponent implements OnInit {
     intervalControl.disable({ emitEvent: false });
     untilControl.disable({ emitEvent: false });
     untilControl.setValue(null, { emitEvent: false });
+  }
+
+  private showPersistentError(message: string): void {
+    this.savingMessage.set(message);
+    this.toasts.error(message);
+  }
+
+  private buildUpdateBookingRequest(): UpdateBookingRequest {
+    const value = this.bookingForm.getRawValue();
+    return {
+      roomId: value.roomId,
+      subject: value.subject,
+      attendees: value.to,
+      optionalAttendees: [...value.cc, ...value.bcc],
+      body: value.body || null,
+      startAt: value.startAt.toISOString(),
+      endAt: value.endAt.toISOString(),
+      timeZone: value.timeZone
+    };
+  }
+
+  private buildUpdateBookingRequestForBooking(booking: BookingInstance, startAt: Date, endAt: Date): UpdateBookingRequest {
+    return {
+      roomId: booking.roomId,
+      subject: booking.subject,
+      attendees: booking.attendees,
+      optionalAttendees: [],
+      body: null,
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
+      timeZone: DEFAULT_TIME_ZONE
+    };
+  }
+
+  private syncBodyEditorAfterRender(): void {
+    setTimeout(() => this.syncBodyEditor());
+  }
+
+  private syncBodyEditor(): void {
+    if (this.bodyEditor) {
+      this.bodyEditor.nativeElement.innerHTML = this.bookingForm.controls.body.value;
+    }
   }
 }

@@ -106,6 +106,63 @@ public sealed class BookingService : IBookingService
         return new CreateBookingResponse(series.Id, dtos);
     }
 
+    public async Task<BookingInstanceDto> UpdateBookingAsync(Guid id, UpdateBookingRequest request, CancellationToken cancellationToken = default)
+    {
+        Validate(request);
+        var instance = await _instances.Query()
+            .Include(i => i.Room)
+            .Include(i => i.Series)
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
+            ?? throw new KeyNotFoundException("Booking was not found.");
+
+        var room = await _rooms.Query().FirstOrDefaultAsync(r => r.Id == request.RoomId && r.IsActive, cancellationToken)
+            ?? throw new ArgumentException("Room was not found or is inactive.");
+
+        var occurrence = (ToUtc(request.StartAt), ToUtc(request.EndAt));
+        var hasConflict = await HasConflictAsync(request.RoomId, [occurrence], cancellationToken, id);
+        if (hasConflict)
+        {
+            throw new ConflictException("The selected room is already booked for the requested time.");
+        }
+
+        var attendeeCsv = string.Join(';', request.Attendees
+            .Concat(request.OptionalAttendees ?? [])
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Select(a => a.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase));
+
+        instance.RoomId = room.Id;
+        instance.Room = room;
+        instance.Subject = request.Subject.Trim();
+        instance.Attendees = attendeeCsv;
+        instance.StartAt = occurrence.Item1;
+        instance.EndAt = occurrence.Item2;
+
+        var seriesInstanceCount = instance.SeriesId is null
+            ? 0
+            : await _instances.Query().CountAsync(i => i.SeriesId == instance.SeriesId, cancellationToken);
+
+        if (instance.Series is { } series && seriesInstanceCount <= 1)
+        {
+            series.RoomId = room.Id;
+            series.Subject = instance.Subject;
+            series.Attendees = attendeeCsv;
+            series.TimeZone = string.IsNullOrWhiteSpace(request.TimeZone) ? "UTC" : request.TimeZone.Trim();
+            series.StartDate = instance.StartAt;
+            series.EndDate = instance.EndAt;
+        }
+
+        if (!string.IsNullOrWhiteSpace(instance.GraphInstanceId))
+        {
+            await _graphCalendarService.UpdateEventAsync(instance.GraphInstanceId, room, request, cancellationToken);
+        }
+
+        _instances.Update(instance);
+        await _instances.SaveChangesAsync(cancellationToken);
+
+        return ToDto(instance);
+    }
+
     public async Task DeleteBookingAsync(Guid id, bool deleteSeries = false, CancellationToken cancellationToken = default)
     {
         var instance = await _instances.Query()
@@ -135,12 +192,12 @@ public sealed class BookingService : IBookingService
         await _instances.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<bool> HasConflictAsync(Guid roomId, IReadOnlyList<(DateTime StartAt, DateTime EndAt)> expanded, CancellationToken cancellationToken)
+    private async Task<bool> HasConflictAsync(Guid roomId, IReadOnlyList<(DateTime StartAt, DateTime EndAt)> expanded, CancellationToken cancellationToken, Guid? excludedInstanceId = null)
     {
         foreach (var occurrence in expanded)
         {
             var conflict = await _instances.Query()
-                .AnyAsync(b => b.RoomId == roomId && b.StartAt < occurrence.EndAt && b.EndAt > occurrence.StartAt, cancellationToken);
+                .AnyAsync(b => b.Id != excludedInstanceId && b.RoomId == roomId && b.StartAt < occurrence.EndAt && b.EndAt > occurrence.StartAt, cancellationToken);
 
             if (conflict)
             {
@@ -152,6 +209,13 @@ public sealed class BookingService : IBookingService
     }
 
     private static void Validate(CreateBookingRequest request)
+    {
+        if (request.RoomId == Guid.Empty) throw new ArgumentException("Room is required.");
+        if (string.IsNullOrWhiteSpace(request.Subject)) throw new ArgumentException("Subject is required.");
+        if (request.EndAt <= request.StartAt) throw new ArgumentException("End time must be after start time.");
+    }
+
+    private static void Validate(UpdateBookingRequest request)
     {
         if (request.RoomId == Guid.Empty) throw new ArgumentException("Room is required.");
         if (string.IsNullOrWhiteSpace(request.Subject)) throw new ArgumentException("Subject is required.");

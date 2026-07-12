@@ -35,6 +35,13 @@ public sealed class BookingsController : TenantControllerBase
         return Ok(await _bookingService.CreateBookingAsync(request, cancellationToken));
     }
 
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = "OrgUser")]
+    public async Task<ActionResult<BookingInstanceDto>> Update(Guid id, UpdateBookingRequest request, CancellationToken cancellationToken)
+    {
+        return Ok(await _bookingService.UpdateBookingAsync(id, request, cancellationToken));
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "OrgUser")]
     public async Task<IActionResult> Delete(Guid id, [FromQuery] bool deleteSeries, CancellationToken cancellationToken)

@@ -64,6 +64,41 @@ public sealed class BookingServiceTests
         Assert.Equal(["alice@contoso.com"], created.Request.Attendees);
     }
 
+    [Fact]
+    public async Task Updates_existing_booking_without_creating_duplicate()
+    {
+        var (db, service, _, _) = TestDb.CreateBookingHarness();
+        var room = await AddRoomAsync(db, "Board Room");
+        var alternateRoom = await AddRoomAsync(db, "Focus Room");
+        var created = await service.CreateBookingAsync(new CreateBookingRequest(
+            room.Id,
+            "Planning",
+            ["alice@contoso.com"],
+            new DateTime(2026, 5, 1, 9, 0, 0),
+            new DateTime(2026, 5, 1, 10, 0, 0),
+            "UTC",
+            null));
+
+        var updated = await service.UpdateBookingAsync(
+            created.Instances.Single().Id,
+            new UpdateBookingRequest(
+                alternateRoom.Id,
+                "Updated Planning",
+                ["bob@contoso.com"],
+                new DateTime(2026, 5, 1, 11, 0, 0),
+                new DateTime(2026, 5, 1, 12, 0, 0),
+                "UTC"));
+
+        Assert.Equal(created.Instances.Single().Id, updated.Id);
+        Assert.Equal(alternateRoom.Id, updated.RoomId);
+        Assert.Equal("Focus Room", updated.RoomName);
+        Assert.Equal("Updated Planning", updated.Subject);
+        Assert.Equal(["bob@contoso.com"], updated.Attendees);
+        Assert.Equal(new DateTime(2026, 5, 1, 11, 0, 0), updated.StartAt);
+        Assert.Equal(new DateTime(2026, 5, 1, 12, 0, 0), updated.EndAt);
+        Assert.Equal(1, db.BookingInstances.Count());
+    }
+
     private static async Task<MeetingRoom> AddRoomAsync(Api.Data.AppDbContext db, string name = "Room", string? exchangeEmail = null)
     {
         var room = new MeetingRoom

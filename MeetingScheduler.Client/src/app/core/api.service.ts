@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { BookingInstance, CreateBookingRequest, DashboardStats, Profile, Room, UpsertRoomRequest } from './models';
+import { BookingInstance, CreateBookingRequest, DashboardStats, Profile, Room, UpdateBookingRequest, UpsertRoomRequest } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -44,6 +44,10 @@ export class ApiService {
 
   createBooking(request: CreateBookingRequest): Observable<{ seriesId: string; instances: BookingInstance[] }> {
     return this.http.post<{ seriesId: string; instances: BookingInstance[] }>(`${this.baseUrl}/bookings`, request, this.devOptions());
+  }
+
+  updateBooking(id: string, request: UpdateBookingRequest): Observable<BookingInstance> {
+    return this.http.put<BookingInstance>(`${this.baseUrl}/bookings/${id}`, request, this.devOptions());
   }
 
   startAdminConsent(): Observable<{ consentUrl: string }> {

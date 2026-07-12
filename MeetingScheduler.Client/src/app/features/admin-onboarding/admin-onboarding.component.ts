@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { environment } from '../../../environments/environment';
+import { ToastService } from '../../core/toast.service';
 
 @Component({
   standalone: true,
@@ -44,13 +45,14 @@ export class AdminOnboardingComponent {
     { label: 'Sync' }
   ];
 
-  constructor(private readonly api: ApiService) {}
+  constructor(private readonly api: ApiService, private readonly toasts?: ToastService) {}
 
   startAdminConsent(): void {
     this.api.startAdminConsent().subscribe({
       next: ({ consentUrl }) => {
         window.location.href = consentUrl;
-      }
+      },
+      error: () => this.toasts?.error('Admin consent could not be started.')
     });
   }
 
@@ -64,10 +66,13 @@ export class AdminOnboardingComponent {
           state
         }).subscribe({
           next: () => {
+            this.toasts?.success('Development consent simulated.');
             window.location.href = '/dev-admin';
-          }
+          },
+          error: () => this.toasts?.error('Development consent could not be simulated.')
         });
-      }
+      },
+      error: () => this.toasts?.error('Admin consent could not be started.')
     });
   }
 }

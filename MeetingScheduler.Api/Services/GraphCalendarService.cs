@@ -67,6 +67,26 @@ public sealed class GraphCalendarService : IGraphCalendarService
         await _graphClient.Me.Events[graphEventId].DeleteAsync(cancellationToken: cancellationToken);
     }
 
+    public async Task UpdateEventAsync(string graphEventId, MeetingRoom room, UpdateBookingRequest request, CancellationToken cancellationToken = default)
+    {
+        if (_graphClient is null || string.IsNullOrWhiteSpace(graphEventId))
+        {
+            return;
+        }
+
+        var evt = new Event
+        {
+            Subject = request.Subject,
+            Start = new DateTimeTimeZone { DateTime = request.StartAt.ToString("yyyy-MM-ddTHH:mm:ss"), TimeZone = request.TimeZone },
+            End = new DateTimeTimeZone { DateTime = request.EndAt.ToString("yyyy-MM-ddTHH:mm:ss"), TimeZone = request.TimeZone },
+            Location = new Location { DisplayName = room.Name, LocationEmailAddress = room.ExchangeEmail },
+            Attendees = CreateAttendees(room, request.Attendees, request.OptionalAttendees ?? []),
+            Body = CreateBody(request.Body)
+        };
+
+        await _graphClient.Me.Events[graphEventId].PatchAsync(evt, cancellationToken: cancellationToken);
+    }
+
     public static List<Attendee> CreateAttendees(MeetingRoom room, IEnumerable<string> requiredEmails, IEnumerable<string> optionalEmails)
     {
         var roomEmail = string.IsNullOrWhiteSpace(room.ExchangeEmail)
