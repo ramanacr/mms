@@ -1,28 +1,36 @@
 import { Component } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { StepsModule } from 'primeng/steps';
 import { ApiService } from '../../core/api.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
   standalone: true,
   selector: 'app-admin-onboarding',
-  imports: [ButtonModule, CardModule, StepsModule],
   template: `
     <main class="onboarding-page">
-      <p-card header="Organization Integration" subheader="Connect your Microsoft 365 tenant">
-        <p-steps [model]="steps" [readonly]="true" />
+      <section class="auth-card">
+        <span>Connect your Microsoft 365 tenant</span>
+        <h1>Organization Integration</h1>
+        <ol class="steps">
+          @for (step of steps; track step.label) {
+            <li>{{ step.label }}</li>
+          }
+        </ol>
         <div class="consent-list">
-          <span><i class="pi pi-check-circle"></i> Delegated calendar access</span>
-          <span><i class="pi pi-check-circle"></i> Tenant-isolated rooms and bookings</span>
-          <span><i class="pi pi-check-circle"></i> Outlook attendee invites</span>
+          <span><i class="ph ph-check-circle" aria-hidden="true"></i> Delegated calendar access</span>
+          <span><i class="ph ph-check-circle" aria-hidden="true"></i> Tenant-isolated rooms and bookings</span>
+          <span><i class="ph ph-check-circle" aria-hidden="true"></i> Outlook attendee invites</span>
         </div>
-        <p-button label="Authorize as Administrator" icon="pi pi-microsoft" styleClass="w-full" (onClick)="startAdminConsent()" />
+        <button type="button" class="btn btn-block" (click)="startAdminConsent()">
+          <i class="ph ph-microsoft-logo" aria-hidden="true"></i>
+          Authorize as Administrator
+        </button>
         @if (showDevelopmentBypass) {
-          <p-button label="Simulate Consent" icon="pi pi-bolt" severity="secondary" styleClass="w-full mt-2" (onClick)="simulateDevelopmentConsent()" />
+          <button type="button" class="btn btn-secondary btn-block mt-2" (click)="simulateDevelopmentConsent()">
+            <i class="ph ph-lightning" aria-hidden="true"></i>
+            Simulate Consent
+          </button>
         }
-      </p-card>
+      </section>
     </main>
   `
 })

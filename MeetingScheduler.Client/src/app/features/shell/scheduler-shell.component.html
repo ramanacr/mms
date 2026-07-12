@@ -6,25 +6,25 @@
     </div>
 
     <button type="button" [class.active]="activeView() === 'dashboard'" (click)="switchView('dashboard')">
-      <i class="pi pi-chart-line"></i>
+      <i class="ph ph-chart-line-up nav-icon" aria-hidden="true"></i>
       Dashboard
     </button>
     <button type="button" [class.active]="activeView() === 'rooms'" (click)="switchView('rooms')">
-      <i class="pi pi-building"></i>
+      <i class="ph ph-buildings nav-icon" aria-hidden="true"></i>
       Rooms
     </button>
     <button type="button" [class.active]="activeView() === 'calendar'" (click)="switchView('calendar')">
-      <i class="pi pi-calendar"></i>
+      <i class="ph ph-calendar-blank nav-icon" aria-hidden="true"></i>
       Calendar
     </button>
     @if (isAdmin()) {
       <button type="button" [class.active]="activeView() === 'admin'" (click)="switchView('admin')">
-        <i class="pi pi-microsoft"></i>
+        <i class="ph ph-microsoft-logo nav-icon" aria-hidden="true"></i>
         Admin Consent
       </button>
     }
     <button type="button" [class.active]="activeView() === 'settings'" (click)="switchView('settings')">
-      <i class="pi pi-cog"></i>
+      <i class="ph ph-gear-six nav-icon" aria-hidden="true"></i>
       Settings
     </button>
   </aside>
@@ -36,9 +36,9 @@
         <span>{{ profile().email || auth.accountName() }}</span>
       </div>
       <div class="topbar-actions">
-        <p-tag [value]="stats().adminConsentGranted ? 'Consent Granted' : 'Consent Pending'" [severity]="stats().adminConsentGranted ? 'success' : 'warn'" />
-        <p-tag [value]="profileLoaded() ? (isAdmin() ? 'OrgAdmin' : 'OrgUser') : (profileLoadFailed() ? 'Profile unavailable' : 'Loading role')" severity="info" />
-        <p-button icon="pi pi-sign-out" [rounded]="true" [text]="true" ariaLabel="Sign out" (onClick)="auth.logout()" />
+        <span class="status-pill" [class.warn]="!stats().adminConsentGranted">{{ stats().adminConsentGranted ? 'Consent Granted' : 'Consent Pending' }}</span>
+        <span class="status-pill info">{{ profileLoaded() ? (isAdmin() ? 'OrgAdmin' : 'OrgUser') : (profileLoadFailed() ? 'Profile unavailable' : 'Loading role') }}</span>
+        <button type="button" class="icon-button" aria-label="Sign out" (click)="auth.logout()"><i class="ph ph-sign-out" aria-hidden="true"></i></button>
       </div>
     </header>
 
@@ -49,287 +49,331 @@
     @if (activeView() === 'dashboard') {
       <section class="stats-grid">
         <article class="stat-card">
-          <i class="pi pi-building"></i>
+          <i class="ph ph-buildings stat-icon" aria-hidden="true"></i>
           <span>Total Rooms</span>
           <strong>{{ stats().totalRooms }}</strong>
         </article>
         <article class="stat-card amber">
-          <i class="pi pi-calendar-clock"></i>
+          <i class="ph ph-calendar-check stat-icon" aria-hidden="true"></i>
           <span>Bookings Today</span>
           <strong>{{ stats().bookingsToday }}</strong>
         </article>
         <article class="stat-card teal">
-          <i class="pi pi-refresh"></i>
+          <i class="ph ph-arrows-clockwise stat-icon" aria-hidden="true"></i>
           <span>Graph Sync</span>
           <strong>{{ stats().graphSyncActive ? 'Active' : 'Waiting' }}</strong>
         </article>
         <article class="stat-card">
-          <i class="pi pi-users"></i>
+          <i class="ph ph-users stat-icon" aria-hidden="true"></i>
           <span>Role</span>
           <strong>{{ profileLoaded() ? (isAdmin() ? 'Admin' : 'User') : 'Loading' }}</strong>
         </article>
       </section>
 
       <section class="content-grid">
-        <p-card styleClass="panel calendar-panel">
-          <ng-template pTemplate="header">
-            <div class="panel-header">
-              <div>
-                <h2>Upcoming Availability</h2>
-                <span>Book a room or switch to Calendar for the full schedule</span>
-              </div>
-              <p-button label="Schedule Meeting" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
+        <article class="panel calendar-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Upcoming Availability</h2>
+              <span>Book a room or switch to Calendar for the full schedule</span>
             </div>
-          </ng-template>
-          <full-calendar [options]="calendarOptions()" />
-        </p-card>
+            <button type="button" class="btn btn-small" (click)="bookingDrawerVisible.set(true)">Schedule Meeting</button>
+          </div>
+          <div class="panel-body">
+            <full-calendar [options]="calendarOptions()" />
+          </div>
+        </article>
 
         <aside class="side-stack">
-          <p-card styleClass="panel booking-panel">
-            <ng-template pTemplate="header">
-              <div class="panel-header compact">
-                <h2>Quick Meeting</h2>
-              </div>
-            </ng-template>
-            <p-button label="Schedule Meeting" icon="pi pi-calendar-plus" styleClass="w-full" (onClick)="bookingDrawerVisible.set(true)" />
-            <div class="next-slot">
-              <span>First available room</span>
-              <strong>{{ rooms()[0]?.name || 'No rooms available' }}</strong>
+          <article class="panel booking-panel">
+            <div class="panel-header compact">
+              <h2>Quick Meeting</h2>
             </div>
-          </p-card>
+            <div class="panel-body">
+              <button type="button" class="btn btn-block" (click)="bookingDrawerVisible.set(true)">Schedule Meeting</button>
+              <div class="next-slot">
+                <span>First available room</span>
+                <strong>{{ rooms()[0]?.name || 'No rooms available' }}</strong>
+              </div>
+            </div>
+          </article>
 
-          <p-card styleClass="panel integration-panel">
-            <ng-template pTemplate="header">
-              <div class="panel-header compact">
-                <h2>Microsoft Integration</h2>
+          <article class="panel integration-panel">
+            <div class="panel-header compact">
+              <h2>Microsoft Integration</h2>
+            </div>
+            <div class="panel-body">
+              <div class="integration-row">
+                <span>Admin Consent</span>
+                <span class="status-pill" [class.warn]="!stats().adminConsentGranted">{{ stats().adminConsentGranted ? 'Granted' : 'Pending' }}</span>
               </div>
-            </ng-template>
-            <div class="integration-row">
-              <span>Admin Consent</span>
-              <p-tag [value]="stats().adminConsentGranted ? 'Granted' : 'Pending'" [severity]="stats().adminConsentGranted ? 'success' : 'warn'" />
+              <div class="integration-row">
+                <span>Calendar Sync</span>
+                <span class="status-pill info">{{ stats().graphSyncActive ? 'Active' : 'Waiting' }}</span>
+              </div>
+              @if (isAdmin()) {
+                <hr />
+                <a class="btn btn-block" [routerLink]="adminOnboardingRoute">Authorize Tenant</a>
+              }
             </div>
-            <div class="integration-row">
-              <span>Calendar Sync</span>
-              <p-tag [value]="stats().graphSyncActive ? 'Active' : 'Waiting'" severity="info" />
-            </div>
-            @if (isAdmin()) {
-              <p-divider />
-              <p-button label="Authorize Tenant" icon="pi pi-microsoft" styleClass="w-full" [routerLink]="adminOnboardingRoute" />
-            }
-          </p-card>
+          </article>
         </aside>
       </section>
     }
 
     @if (activeView() === 'rooms') {
       <section class="single-panel">
-        <p-card styleClass="panel rooms-panel">
-          <ng-template pTemplate="header">
-            <div class="panel-header">
-              <div>
-                <h2>{{ isAdmin() ? 'Manage Meeting Rooms' : 'Available Meeting Rooms' }}</h2>
-                <span>{{ isAdmin() ? 'Global room inventory for this tenant' : 'Rooms available for meeting scheduling' }}</span>
-              </div>
-              @if (isAdmin()) {
-                <p-button label="Add Room" icon="pi pi-plus" size="small" (onClick)="openNewRoom()" />
-              }
+        <article class="panel rooms-panel">
+          <div class="panel-header">
+            <div>
+              <h2>{{ isAdmin() ? 'Manage Meeting Rooms' : 'Available Meeting Rooms' }}</h2>
+              <span>{{ isAdmin() ? 'Global room inventory for this tenant' : 'Rooms available for meeting scheduling' }}</span>
             </div>
-          </ng-template>
-
-          <p-table [value]="rooms()" [rows]="8" [paginator]="true" responsiveLayout="scroll">
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Name</th>
-                <th>Location</th>
-                <th>Capacity</th>
-                <th>Amenities</th>
-                <th>Status</th>
-                @if (isAdmin()) {
-                  <th>Action</th>
+            @if (isAdmin()) {
+              <button type="button" class="btn btn-small" (click)="openNewRoom()">Add Room</button>
+            }
+          </div>
+          <div class="panel-body table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Location</th>
+                  <th>Capacity</th>
+                  <th>Amenities</th>
+                  <th>Status</th>
+                  @if (isAdmin()) {
+                    <th>Action</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (room of rooms(); track room.id) {
+                  <tr>
+                    <td>{{ room.name }}</td>
+                    <td>{{ room.location }}</td>
+                    <td>{{ room.capacity }}</td>
+                    <td>{{ room.amenities || 'Standard setup' }}</td>
+                    <td><span class="status-pill" [class.danger]="!room.isActive">{{ room.isActive ? 'Active' : 'Inactive' }}</span></td>
+                    @if (isAdmin()) {
+                      <td><button type="button" class="link-button" (click)="editRoom(room)">Edit</button></td>
+                    }
+                  </tr>
                 }
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-room>
-              <tr>
-                <td>{{ room.name }}</td>
-                <td>{{ room.location }}</td>
-                <td>{{ room.capacity }}</td>
-                <td>{{ room.amenities || 'Standard setup' }}</td>
-                <td>
-                  <p-tag [value]="room.isActive ? 'Active' : 'Inactive'" [severity]="room.isActive ? 'success' : 'danger'" />
-                </td>
-                @if (isAdmin()) {
-                  <td>
-                    <p-button icon="pi pi-pencil" [text]="true" ariaLabel="Edit room" (onClick)="editRoom(room)" />
-                  </td>
-                }
-              </tr>
-            </ng-template>
-          </p-table>
-        </p-card>
+              </tbody>
+            </table>
+          </div>
+        </article>
       </section>
     }
 
     @if (activeView() === 'calendar') {
       <section class="single-panel">
-        <p-card styleClass="panel calendar-panel">
-          <ng-template pTemplate="header">
-            <div class="panel-header">
-              <div>
-                <h2>Room Availability</h2>
-                <span>Weekly schedule with recurring series highlighted</span>
-              </div>
-              <p-button label="Schedule Meeting" icon="pi pi-plus" size="small" (onClick)="bookingDrawerVisible.set(true)" />
+        <article class="panel calendar-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Room Availability</h2>
+              <span>Weekly schedule with recurring series highlighted</span>
             </div>
-          </ng-template>
-          <full-calendar [options]="calendarOptions()" />
-        </p-card>
+            <button type="button" class="btn btn-small" (click)="bookingDrawerVisible.set(true)">Schedule Meeting</button>
+          </div>
+          <div class="panel-body">
+            <full-calendar [options]="calendarOptions()" />
+          </div>
+        </article>
       </section>
     }
 
     @if (activeView() === 'admin' && isAdmin()) {
       <section class="single-panel narrow">
-        <p-card styleClass="panel integration-panel">
-          <ng-template pTemplate="header">
-            <div class="panel-header">
-              <div>
-                <h2>Microsoft Integration</h2>
-                <span>Tenant-level consent and calendar sync status</span>
-              </div>
+        <article class="panel integration-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Microsoft Integration</h2>
+              <span>Tenant-level consent and calendar sync status</span>
             </div>
-          </ng-template>
-          <div class="integration-row">
-            <span>Admin Consent</span>
-            <p-tag [value]="stats().adminConsentGranted ? 'Granted' : 'Pending'" [severity]="stats().adminConsentGranted ? 'success' : 'warn'" />
           </div>
-          <div class="integration-row">
-            <span>Calendar Sync</span>
-            <p-tag [value]="stats().graphSyncActive ? 'Active' : 'Waiting'" severity="info" />
+          <div class="panel-body">
+            <div class="integration-row">
+              <span>Admin Consent</span>
+              <span class="status-pill" [class.warn]="!stats().adminConsentGranted">{{ stats().adminConsentGranted ? 'Granted' : 'Pending' }}</span>
+            </div>
+            <div class="integration-row">
+              <span>Calendar Sync</span>
+              <span class="status-pill info">{{ stats().graphSyncActive ? 'Active' : 'Waiting' }}</span>
+            </div>
+            <hr />
+            <a class="btn" [routerLink]="adminOnboardingRoute">Authorize Tenant</a>
           </div>
-          <p-divider />
-          <p-button label="Authorize Tenant" icon="pi pi-microsoft" [routerLink]="adminOnboardingRoute" />
-        </p-card>
+        </article>
       </section>
     }
 
     @if (activeView() === 'settings') {
       <section class="single-panel narrow">
-        <p-card styleClass="panel settings-panel">
-          <ng-template pTemplate="header">
-            <div class="panel-header">
-              <div>
-                <h2>Settings</h2>
-                <span>Profile and local development persona</span>
+        <article class="panel settings-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Settings</h2>
+              <span>Profile and local development persona</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="settings-row">
+              <span>Name</span>
+              <strong>{{ profile().displayName }}</strong>
+            </div>
+            <div class="settings-row">
+              <span>Email</span>
+              <strong>{{ profile().email || auth.accountName() || 'Not loaded' }}</strong>
+            </div>
+            <div class="settings-row">
+              <span>Tenant</span>
+              <strong>{{ profile().tenantId || 'Not loaded' }}</strong>
+            </div>
+            <div class="settings-row">
+              <span>Role</span>
+              <strong>{{ profileLoaded() ? (isAdmin() ? 'OrgAdmin' : 'OrgUser') : 'Not loaded' }}</strong>
+            </div>
+            @if (isDevelopment) {
+              <hr />
+              <div class="dev-persona">
+                <a class="btn" [class.btn-secondary]="devRole() !== 'admin'" (click)="setDevelopmentRole('admin')" [routerLink]="devAdminRoute">Use Dev Admin</a>
+                <a class="btn" [class.btn-secondary]="devRole() !== 'user'" (click)="setDevelopmentRole('user')" [routerLink]="devUserRoute">Use Dev User</a>
               </div>
-            </div>
-          </ng-template>
-          <div class="settings-row">
-            <span>Name</span>
-            <strong>{{ profile().displayName }}</strong>
+            }
           </div>
-          <div class="settings-row">
-            <span>Email</span>
-            <strong>{{ profile().email || auth.accountName() || 'Not loaded' }}</strong>
-          </div>
-          <div class="settings-row">
-            <span>Tenant</span>
-            <strong>{{ profile().tenantId || 'Not loaded' }}</strong>
-          </div>
-          <div class="settings-row">
-            <span>Role</span>
-            <strong>{{ profileLoaded() ? (isAdmin() ? 'OrgAdmin' : 'OrgUser') : 'Not loaded' }}</strong>
-          </div>
-          @if (isDevelopment) {
-            <p-divider />
-            <div class="dev-persona">
-              <p-button label="Use Dev Admin" icon="pi pi-user-plus" [outlined]="devRole() !== 'admin'" (onClick)="setDevelopmentRole('admin')" [routerLink]="devAdminRoute" />
-              <p-button label="Use Dev User" icon="pi pi-user" [outlined]="devRole() !== 'user'" severity="secondary" (onClick)="setDevelopmentRole('user')" [routerLink]="devUserRoute" />
-            </div>
-          }
-        </p-card>
+        </article>
       </section>
     }
   </main>
 </div>
 
-<p-dialog [visible]="roomDialogVisible()" (visibleChange)="roomDialogVisible.set($event)" [modal]="true" [style]="{ width: '34rem' }" [header]="editingRoom() ? 'Edit Room' : 'Add Room'">
-  <form class="dialog-form" [formGroup]="roomForm" (ngSubmit)="saveRoom()">
-    <p-fluid>
-      <label>Name<input pInputText formControlName="name" /></label>
-      <label>Floor<input pInputText formControlName="floor" /></label>
-      <label>Location<input pInputText formControlName="location" /></label>
-      <label>Capacity<p-inputnumber formControlName="capacity" [min]="1" /></label>
-      <label>Amenities<textarea pTextarea formControlName="amenities" rows="3"></textarea></label>
-      <label>Exchange Email<input pInputText formControlName="exchangeEmail" /></label>
-      <label class="switch-row">Active<p-toggleswitch formControlName="isActive" /></label>
-    </p-fluid>
-    <div class="dialog-actions">
-      <p-button label="Cancel" severity="secondary" [text]="true" type="button" (onClick)="roomDialogVisible.set(false)" />
-      <p-button label="Save Room" icon="pi pi-check" type="submit" />
-    </div>
-  </form>
-</p-dialog>
-
-<p-drawer [visible]="bookingDrawerVisible()" (visibleChange)="bookingDrawerVisible.set($event)" position="right" styleClass="meeting-drawer" [style]="{ width: 'min(92vw, 64rem)' }" header="Schedule Meeting">
-  <form class="dialog-form meeting-form" [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
-    <section class="meeting-section">
-      <label class="full-span">Subject<input pInputText formControlName="subject" placeholder="Meeting subject" /></label>
-      <label class="full-span">Room<p-select formControlName="roomId" [options]="roomOptions()" placeholder="Select room" styleClass="w-full" /></label>
+@if (roomDialogVisible()) {
+  <div class="modal-backdrop" role="presentation" (click)="roomDialogVisible.set(false)">
+    <section class="modal-panel" role="dialog" aria-modal="true" [attr.aria-label]="editingRoom() ? 'Edit Room' : 'Add Room'" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ editingRoom() ? 'Edit Room' : 'Add Room' }}</h2>
+        <button type="button" class="icon-button" aria-label="Close room dialog" (click)="roomDialogVisible.set(false)">X</button>
+      </header>
+      <form class="dialog-form" [formGroup]="roomForm" (ngSubmit)="saveRoom()">
+        <label>Name<input class="form-control" formControlName="name" /></label>
+        <label>Floor<input class="form-control" formControlName="floor" /></label>
+        <label>Location<input class="form-control" formControlName="location" /></label>
+        <label>Capacity<input class="form-control" type="number" formControlName="capacity" min="1" /></label>
+        <label>Amenities<textarea class="form-control" formControlName="amenities" rows="3"></textarea></label>
+        <label>Exchange Email<input class="form-control" formControlName="exchangeEmail" /></label>
+        <label class="switch-row">Active<input type="checkbox" formControlName="isActive" /></label>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" type="button" (click)="roomDialogVisible.set(false)">Cancel</button>
+          <button class="btn" type="submit">Save Room</button>
+        </div>
+      </form>
     </section>
+  </div>
+}
 
-    <section class="meeting-section recipient-section">
-      <label>
-        To
-        <p-autocomplete formControlName="to" [suggestions]="[]" [multiple]="true" [typeahead]="false" [separator]="emailSeparator" [addOnBlur]="true" [addOnTab]="true" placeholder="alice@contoso.com" styleClass="w-full recipient-input" />
-      </label>
-      <label>
-        CC
-        <p-autocomplete formControlName="cc" [suggestions]="[]" [multiple]="true" [typeahead]="false" [separator]="emailSeparator" [addOnBlur]="true" [addOnTab]="true" placeholder="optional@contoso.com" styleClass="w-full recipient-input" />
-      </label>
-      <label>
-        BCC
-        <p-autocomplete formControlName="bcc" [suggestions]="[]" [multiple]="true" [typeahead]="false" [separator]="emailSeparator" [addOnBlur]="true" [addOnTab]="true" placeholder="private@contoso.com" styleClass="w-full recipient-input" />
-      </label>
-    </section>
+@if (bookingDrawerVisible()) {
+  <div class="drawer-backdrop" role="presentation" (click)="bookingDrawerVisible.set(false)">
+    <aside class="meeting-drawer" role="dialog" aria-modal="true" aria-label="Schedule Meeting" (click)="$event.stopPropagation()">
+      <header class="drawer-header">
+        <h2>Schedule Meeting</h2>
+        <button type="button" class="icon-button" aria-label="Close meeting scheduler" (click)="bookingDrawerVisible.set(false)">X</button>
+      </header>
 
-    <section class="meeting-section time-section">
-      <label>Start<p-datepicker formControlName="startAt" [showTime]="true" hourFormat="24" [showIcon]="true" [showButtonBar]="true" [appendTo]="'body'" styleClass="w-full" /></label>
-      <label>End<p-datepicker formControlName="endAt" [showTime]="true" hourFormat="24" [showIcon]="true" [showButtonBar]="true" [appendTo]="'body'" styleClass="w-full" /></label>
-      <label class="full-span">Time Zone<p-select formControlName="timeZone" [options]="timeZoneOptions" [filter]="true" placeholder="Select time zone" styleClass="w-full" /></label>
-    </section>
+      <form class="dialog-form meeting-form" [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
+        <section class="meeting-section">
+          <label class="full-span">Subject<input class="form-control" formControlName="subject" placeholder="Meeting subject" /></label>
+          <label class="full-span">
+            Room
+            <select class="form-control" formControlName="roomId">
+              <option value="">Select room</option>
+              @for (room of roomOptions(); track room.value) {
+                <option [value]="room.value">{{ room.label }}</option>
+              }
+            </select>
+          </label>
+        </section>
 
-    <section class="meeting-section recurrence-section">
-      <label>Recurrence<p-select formControlName="recurrenceType" [options]="recurrenceOptions" styleClass="w-full" /></label>
-      <label>Interval<p-inputnumber formControlName="recurrenceInterval" [min]="1" styleClass="w-full" /></label>
-      <label>Repeat Until<p-datepicker formControlName="recurrenceUntil" [showTime]="true" hourFormat="24" [showIcon]="true" [showButtonBar]="true" [showClear]="true" [appendTo]="'body'" styleClass="w-full" /></label>
-    </section>
+        <section class="meeting-section recipient-section">
+          <label>
+            To
+            <div class="chip-input">
+              @for (recipient of bookingForm.controls.to.value; track recipient) {
+                <span class="chip">{{ recipient }}<button type="button" aria-label="Remove recipient" (click)="removeRecipient('to', recipient)">x</button></span>
+              }
+              <input placeholder="alice@contoso.com" (keydown)="handleRecipientKeydown('to', $event)" (blur)="addRecipientTokens('to', $any($event.target).value); $any($event.target).value = ''" />
+            </div>
+          </label>
+          <label>
+            CC
+            <div class="chip-input">
+              @for (recipient of bookingForm.controls.cc.value; track recipient) {
+                <span class="chip">{{ recipient }}<button type="button" aria-label="Remove recipient" (click)="removeRecipient('cc', recipient)">x</button></span>
+              }
+              <input placeholder="optional@contoso.com" (keydown)="handleRecipientKeydown('cc', $event)" (blur)="addRecipientTokens('cc', $any($event.target).value); $any($event.target).value = ''" />
+            </div>
+          </label>
+          <label>
+            BCC
+            <div class="chip-input">
+              @for (recipient of bookingForm.controls.bcc.value; track recipient) {
+                <span class="chip">{{ recipient }}<button type="button" aria-label="Remove recipient" (click)="removeRecipient('bcc', recipient)">x</button></span>
+              }
+              <input placeholder="private@contoso.com" (keydown)="handleRecipientKeydown('bcc', $event)" (blur)="addRecipientTokens('bcc', $any($event.target).value); $any($event.target).value = ''" />
+            </div>
+          </label>
+        </section>
 
-    <section class="meeting-section">
-      <label class="full-span">
-        Body
-        <p-editor formControlName="body" [style]="{ height: '12rem' }" placeholder="Agenda, links, and notes">
-          <ng-template pTemplate="header">
-            <span class="ql-formats">
-              <button type="button" class="ql-bold" aria-label="Bold"></button>
-              <button type="button" class="ql-italic" aria-label="Italic"></button>
-              <button type="button" class="ql-underline" aria-label="Underline"></button>
-            </span>
-            <span class="ql-formats">
-              <button type="button" class="ql-list" value="ordered" aria-label="Ordered list"></button>
-              <button type="button" class="ql-list" value="bullet" aria-label="Bullet list"></button>
-            </span>
-            <span class="ql-formats">
-              <button type="button" class="ql-link" aria-label="Link"></button>
-              <button type="button" class="ql-clean" aria-label="Clear formatting"></button>
-            </span>
-          </ng-template>
-        </p-editor>
-      </label>
-    </section>
+        <section class="meeting-section time-section">
+          <label>Start<input class="form-control" type="datetime-local" [value]="toDateTimeLocal(bookingForm.controls.startAt.value)" (change)="setDateTimeControl('startAt', $any($event.target).value)" /></label>
+          <label>End<input class="form-control" type="datetime-local" [value]="toDateTimeLocal(bookingForm.controls.endAt.value)" (change)="setDateTimeControl('endAt', $any($event.target).value)" /></label>
+          <label class="full-span">
+            Time Zone
+            <select class="form-control" formControlName="timeZone">
+              @for (timeZone of timeZoneOptions; track timeZone.value) {
+                <option [value]="timeZone.value">{{ timeZone.label }}</option>
+              }
+            </select>
+          </label>
+        </section>
 
-    <div class="dialog-actions meeting-actions">
-      <p-button label="Cancel" severity="secondary" [text]="true" type="button" (onClick)="bookingDrawerVisible.set(false)" />
-      <p-button label="Send Invite & Book Room" icon="pi pi-send" type="submit" />
-    </div>
-  </form>
-</p-drawer>
+        <section class="meeting-section recurrence-section">
+          <label>
+            Recurrence
+            <select class="form-control" formControlName="recurrenceType">
+              @for (option of recurrenceOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          <label>Interval<input class="form-control" type="number" formControlName="recurrenceInterval" min="1" /></label>
+          <label>Repeat Until<input class="form-control" type="datetime-local" [disabled]="bookingForm.controls.recurrenceUntil.disabled" [value]="toDateTimeLocal(bookingForm.controls.recurrenceUntil.value)" (change)="setDateTimeControl('recurrenceUntil', $any($event.target).value)" /></label>
+        </section>
+
+        <section class="meeting-section">
+          <label class="full-span">
+            Body
+            <div class="rich-editor">
+              <div class="editor-toolbar" aria-label="Body formatting toolbar">
+                <button type="button" title="Bold" (click)="formatBody('bold')">B</button>
+                <button type="button" title="Italic" (click)="formatBody('italic')">I</button>
+                <button type="button" title="Underline" (click)="formatBody('underline')">U</button>
+                <button type="button" title="Ordered list" (click)="formatBody('insertOrderedList')">1.</button>
+                <button type="button" title="Bullet list" (click)="formatBody('insertUnorderedList')">-</button>
+                <button type="button" title="Link" (click)="formatBody('createLink')">Link</button>
+                <button type="button" title="Clear formatting" (click)="formatBody('removeFormat')">Clear</button>
+              </div>
+              <div class="editor-surface" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Agenda, links, and notes" [innerHTML]="bookingForm.controls.body.value" (input)="updateBodyFromEditor($event)"></div>
+            </div>
+          </label>
+        </section>
+
+        <div class="dialog-actions meeting-actions">
+          <button class="btn btn-secondary" type="button" (click)="bookingDrawerVisible.set(false)">Cancel</button>
+          <button class="btn" type="submit">Send Invite & Book Room</button>
+        </div>
+      </form>
+    </aside>
+  </div>
+}

@@ -1,19 +1,22 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { ApiService } from '../../core/api.service';
 
 @Component({
   standalone: true,
   selector: 'app-admin-callback',
-  imports: [ButtonModule, CardModule, RouterLink],
+  imports: [RouterLink],
   template: `
     <main class="onboarding-page">
-      <p-card header="Admin Consent" [subheader]="status()">
+      <section class="auth-card">
+        <span>{{ status() }}</span>
+        <h1>Admin Consent</h1>
         <p>{{ detail() }}</p>
-        <p-button label="Open Scheduler" icon="pi pi-arrow-right" routerLink="/" />
-      </p-card>
+        <a class="btn" routerLink="/">
+          Open Scheduler
+          <i class="ph ph-arrow-right" aria-hidden="true"></i>
+        </a>
+      </section>
     </main>
   `
 })

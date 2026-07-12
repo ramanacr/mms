@@ -1,13 +1,11 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { CardModule } from 'primeng/card';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
   standalone: true,
   selector: 'app-login',
-  imports: [CardModule],
   template: `
     <main class="login-page">
       <section class="login-copy">
@@ -16,13 +14,15 @@ import { AuthService } from '../../core/auth.service';
         <p>Book rooms, prevent conflicts, and send Outlook invites from one secure Microsoft 365 workspace.</p>
       </section>
 
-      <p-card header="Sign in" subheader="Use your organization Microsoft account">
-        <button type="button" class="login-button" (click)="handleLogin()">
-          <span class="pi pi-microsoft"></span>
+      <section class="auth-card">
+        <span>Use your organization Microsoft account</span>
+        <h2>Sign in</h2>
+        <button type="button" class="btn btn-block login-button" (click)="handleLogin()">
+          <i class="ph ph-microsoft-logo" aria-hidden="true"></i>
           Login with Microsoft
         </button>
         <p class="fine-print">Admins can connect organization-wide consent after signing in.</p>
-      </p-card>
+      </section>
     </main>
   `
 })

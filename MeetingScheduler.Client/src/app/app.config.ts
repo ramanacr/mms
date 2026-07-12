@@ -5,8 +5,6 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { MsalInterceptor, MsalModule, MsalGuardConfiguration, MsalInterceptorConfiguration, MsalService } from '@azure/msal-angular';
 import { IPublicClientApplication, InteractionType, PublicClientApplication } from '@azure/msal-browser';
 import { firstValueFrom } from 'rxjs';
-import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeuix/themes/aura';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
@@ -57,14 +55,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
-    providePrimeNG({
-      theme: {
-        preset: Aura,
-        options: {
-          darkModeSelector: '.app-dark'
-        }
-      }
-    }),
     importProvidersFrom(
       MsalModule.forRoot(
         msalInstanceFactory(),

@@ -7,23 +7,6 @@ import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { AutoCompleteModule } from 'primeng/autocomplete';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { DatePickerModule } from 'primeng/datepicker';
-import { DialogModule } from 'primeng/dialog';
-import { DividerModule } from 'primeng/divider';
-import { DrawerModule } from 'primeng/drawer';
-import { EditorModule } from 'primeng/editor';
-import { FluidModule } from 'primeng/fluid';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { TableModule } from 'primeng/table';
-import { TabsModule } from 'primeng/tabs';
-import { TagModule } from 'primeng/tag';
-import { TextareaModule } from 'primeng/textarea';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { BookingFormValue, buildCreateBookingRequest } from '../../core/booking.mapper';
@@ -83,24 +66,7 @@ export function isRecurringSelection(recurrenceType: string | null | undefined):
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    AutoCompleteModule,
-    ButtonModule,
-    CardModule,
-    DatePickerModule,
-    DialogModule,
-    DividerModule,
-    DrawerModule,
-    EditorModule,
-    FluidModule,
-    FullCalendarModule,
-    InputNumberModule,
-    InputTextModule,
-    SelectModule,
-    TableModule,
-    TabsModule,
-    TagModule,
-    TextareaModule,
-    ToggleSwitchModule
+    FullCalendarModule
   ],
   templateUrl: './scheduler-shell.component.html',
   styleUrls: ['./scheduler-shell.component.scss']
@@ -126,7 +92,6 @@ export class SchedulerShellComponent implements OnInit {
   readonly devUserRoute = '/dev-user';
   readonly isDevelopment = !environment.production;
   readonly devRole = signal<DevelopmentRole>('admin');
-  readonly emailSeparator = /[,;\s]+/;
   readonly timeZoneOptions = buildTimeZoneOptions();
 
   readonly isAdmin = computed(() => this.profile().roles.includes('OrgAdmin'));
@@ -299,6 +264,82 @@ export class SchedulerShellComponent implements OnInit {
 
   deleteRoom(room: Room): void {
     this.api.deleteRoom(room.id).subscribe({ next: () => this.loadAll() });
+  }
+
+  toDateTimeLocal(value: Date | null): string {
+    if (!value) {
+      return '';
+    }
+
+    const local = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  }
+
+  setDateTimeControl(controlName: 'startAt' | 'endAt' | 'recurrenceUntil', value: string): void {
+    const parsedValue = value ? new Date(value) : null;
+
+    if (controlName === 'recurrenceUntil') {
+      this.bookingForm.controls.recurrenceUntil.setValue(parsedValue);
+      return;
+    }
+
+    if (parsedValue) {
+      this.bookingForm.controls[controlName].setValue(parsedValue);
+    }
+  }
+
+  addRecipientTokens(controlName: 'to' | 'cc' | 'bcc', rawValue: string): void {
+    const tokens = rawValue
+      .split(/[,;\s]+/)
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    if (tokens.length === 0) {
+      return;
+    }
+
+    const control = this.bookingForm.controls[controlName];
+    const recipients = [...control.value];
+    for (const token of tokens) {
+      if (!recipients.includes(token)) {
+        recipients.push(token);
+      }
+    }
+
+    control.setValue(recipients);
+  }
+
+  handleRecipientKeydown(controlName: 'to' | 'cc' | 'bcc', event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    if (!['Enter', ',', ';', ' '].includes(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.addRecipientTokens(controlName, input.value);
+    input.value = '';
+  }
+
+  removeRecipient(controlName: 'to' | 'cc' | 'bcc', recipient: string): void {
+    const control = this.bookingForm.controls[controlName];
+    control.setValue(control.value.filter((value) => value !== recipient));
+  }
+
+  updateBodyFromEditor(event: Event): void {
+    const editor = event.target as HTMLElement;
+    this.bookingForm.controls.body.setValue(editor.innerHTML);
+  }
+
+  formatBody(command: 'bold' | 'italic' | 'underline' | 'insertOrderedList' | 'insertUnorderedList' | 'createLink' | 'removeFormat'): void {
+    if (command === 'createLink') {
+      const url = window.prompt('Enter link URL');
+      if (url) {
+        document.execCommand(command, false, url);
+      }
+      return;
+    }
+
+    document.execCommand(command);
   }
 
   submitBooking(): void {
