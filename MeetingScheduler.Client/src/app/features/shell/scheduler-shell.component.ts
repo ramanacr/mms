@@ -32,7 +32,12 @@ import { environment } from '../../../environments/environment';
 
 export const DEFAULT_PROFILE: Profile = { displayName: 'Scheduler User', email: '', tenantId: '', roles: [] };
 export type DevelopmentRole = 'admin' | 'user';
-export const DEFAULT_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+export function resolveDefaultTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+export const DEFAULT_TIME_ZONE = resolveDefaultTimeZone();
 
 export function resolveDevelopmentRole(pathname: string, storedRole: string | null): DevelopmentRole {
   if (pathname.includes('/dev-user')) {
@@ -65,6 +70,10 @@ export function buildTimeZoneOptions(currentTimeZone = DEFAULT_TIME_ZONE): { lab
     .sort((a, b) => a.localeCompare(b));
 
   return zones.map((zone) => ({ label: zone.replaceAll('_', ' '), value: zone }));
+}
+
+export function isRecurringSelection(recurrenceType: string | null | undefined): boolean {
+  return recurrenceType === 'Daily' || recurrenceType === 'Weekly' || recurrenceType === 'Monthly';
 }
 
 @Component({
@@ -188,6 +197,8 @@ export class SchedulerShellComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.syncRecurrenceControls();
+    this.bookingForm.controls.recurrenceType.valueChanges.subscribe(() => this.syncRecurrenceControls());
     this.applyDevelopmentRole();
     this.loadAll();
   }
@@ -318,5 +329,21 @@ export class SchedulerShellComponent implements OnInit {
     const role = resolveDevelopmentRole(window.location.pathname, localStorage.getItem('devRole'));
     localStorage.setItem('devRole', role);
     this.devRole.set(role);
+  }
+
+  private syncRecurrenceControls(): void {
+    const shouldEnable = isRecurringSelection(this.bookingForm.controls.recurrenceType.value);
+    const intervalControl = this.bookingForm.controls.recurrenceInterval;
+    const untilControl = this.bookingForm.controls.recurrenceUntil;
+
+    if (shouldEnable) {
+      intervalControl.enable({ emitEvent: false });
+      untilControl.enable({ emitEvent: false });
+      return;
+    }
+
+    intervalControl.disable({ emitEvent: false });
+    untilControl.disable({ emitEvent: false });
+    untilControl.setValue(null, { emitEvent: false });
   }
 }
